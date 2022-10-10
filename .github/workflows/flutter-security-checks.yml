@@ -1,0 +1,80 @@
+on:
+  workflow_call:
+    inputs:
+      relativeIncludePath:
+        required: false
+        type: string
+      relativeExcludePath:
+        required: false
+        type: string
+
+jobs:
+  secret_scanner:
+    runs-on: [ self-hosted ]
+    steps:
+      - uses: actions/secret-scan@main
+        with:
+          include_path: "${{ inputs.relativeIncludePath }}"
+          exclude_path: "${{ inputs.relativeExcludePath }}"
+
+  package-analysis:
+    runs-on: [ self-hosted ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  scan_only:
+    runs-on: [ self-hosted ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: mobsfscan
+        uses: MobSF/mobsfscan@main
+        with:
+          args: '. --json'
+          # manual evaluation of the result is required here (check if there exists a solution already for it)
+
+# only works with advanced security, which is only for enterprise... https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security
+#  mobsfscan:
+#    runs-on: ubuntu-latest
+#    name: mobsfscan code scanning
+#    steps:
+#      - name: Checkout the code
+#        uses: actions/checkout@v2
+#      - name: mobsfscan
+#        uses: MobSF/mobsfscan@main
+#        with:
+#          args: '. --sarif --output results.sarif || true'
+#      - name: Upload mobsfscan report
+#        uses: github/codeql-action/upload-sarif@v1
+#        with:
+#          sarif_file: results.sarif
+
+# interesting
+#  nuclei-scan:
+#    runs-on: [ self-hosted ]
+#    steps:
+#      - uses: actions/checkout@v2
+#
+#      - name: Nuclei - Vulnerability Scan
+#        uses: projectdiscovery/nuclei-action@main
+#        with:
+#          target: https://quickbirdmedical.com/
+#      - name: GitHub Workflow artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: nuclei.log
+#          path: nuclei.log
+#
+#      - name: GitHub Security Dashboard Alerts update
+#        uses: github/codeql-action/upload-sarif@v2
+#        with:
+#          sarif_file: nuclei.sarif
