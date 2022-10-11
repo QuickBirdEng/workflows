@@ -1,10 +1,13 @@
 on:
   workflow_call:
     inputs:
-      relativeIncludePath:
+      flutter-version:
+        required: true
+        type: string
+      relative-include-path:
         required: false
         type: string
-      relativeExcludePath:
+      relative-exclude-path:
         required: false
         type: string
 
@@ -12,69 +15,125 @@ jobs:
   secret_scanner:
     runs-on: [ self-hosted ]
     steps:
-      - uses: actions/secret-scan@main
+      - uses: actions/checkout@v2
+      - run: echo ${{inputs.relative-include-path}} ${{inputs.relative-exclude-path}}
+      - uses: max/secret-scan@master
         with:
-          include_path: "${{ inputs.relativeIncludePath }}"
-          exclude_path: "${{ inputs.relativeExcludePath }}"
+          include_path: '${{ inputs.relative-include-path }}'
+          exclude_path: '${{ inputs.relative-exclude-path }}'
+#      - run: echo >\n
+#          !!!!!!!!!!!!!! Message from the security officer !!!!!!!!!!!!!!\n
+#          Should there be findings, think about if that token should be put into source code?\n
+#          \n
+#          If the token can be in the source code, put the path of that file into a text file and provide that path as an input parameter for the security checks job \"relative-exclude-path":" .pathtofile/secret_check_ignore_paths.txt\"\n
+#          If the token should not be in the source code, consider putting it into the GitHub secrets\n
 
-  package-analysis:
+  trufflehog-package-analysis:
     runs-on: [ self-hosted ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: set env variables for check
+        if: inputs.relative-exclude-path != ''
+        run: |
+          echo 'TH_EXCLUDE_PATHS=--exclude-paths=${{ inputs.relative-exclude-path }}' >> $GITHUB_ENV
+      - name: set env variables for check
+        if: inputs.relative-include-path != ''
+        run: |
+          echo 'TH_INCLUDE_PATHS=--include-paths=${{ inputs.relative-include-path }}' >> $GITHUB_ENV
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --debug --only-verified
+          extra_args: --debug --only-verified ${{ env.TH_EXCLUDE_PATHS }} ${{ env.TH_INCLUDE_PATHS }}
 
-  scan_only:
-    runs-on: [ self-hosted ]
-    steps:
-      - uses: actions/checkout@v2
-      - name: mobsfscan
-        uses: MobSF/mobsfscan@main
-        with:
-          args: '. --json'
-          # manual evaluation of the result is required here (check if there exists a solution already for it)
-
-# only works with advanced security, which is only for enterprise... https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security
-#  mobsfscan:
-#    runs-on: ubuntu-latest
-#    name: mobsfscan code scanning
-#    steps:
-#      - name: Checkout the code
-#        uses: actions/checkout@v2
-#      - name: mobsfscan
-#        uses: MobSF/mobsfscan@main
-#        with:
-#          args: '. --sarif --output results.sarif || true'
-#      - name: Upload mobsfscan report
-#        uses: github/codeql-action/upload-sarif@v1
-#        with:
-#          sarif_file: results.sarif
-
-# interesting
-#  nuclei-scan:
+  # https://github.com/fundacaocerti/mobsf-action
+  # https://github.com/fundacaocerti/mobsf-action/pull/16
+  # https://github.com/fundacaocerti/mobsf-action/pull/17
+#  mobsf_scan_only:
 #    runs-on: [ self-hosted ]
 #    steps:
-#      - uses: actions/checkout@v2
-#
-#      - name: Nuclei - Vulnerability Scan
-#        uses: projectdiscovery/nuclei-action@main
+#      - name: Checkout Repo
+#        uses: actions/checkout@master
+#      - name: Set-up Java
+#        uses: actions/setup-java@v1
 #        with:
-#          target: https://quickbirdmedical.com/
-#      - name: GitHub Workflow artifacts
+#          java-version: '12.x'
+#      - name: Set-up Flutter
+#        uses: subosito/flutter-action@v1
+#        with:
+#          flutter-version: ${{ inputs.flutterVersion }}
+#      - name: Flutter Install Dependencies
+#        run: flutter pub get
+#      - name: Flutter Build
+#        run: flutter build apk
+##      - name: Fix Permissions for MobSF Docker
+##        run: |
+##          set -e
+##          sudo mkdir -p /home/runner/work/_temp/_github_home
+##          sudo chown -R 9901:9901 /home/runner/work/_temp/_github_home
+##          sudo mkdir -p /home/runner/work/$REPO_NAME/$REPO_NAME
+##          sudo chown -R 9901:9901 /home/runner/work/$REPO_NAME/$REPO_NAME
+##        env:
+##          REPO_NAME: ${{ github.event.repository.name }}
+#      - name: Run MobSF Analysis
+#        uses: fundacaocerti/mobsf-action@v1.7.2
+#        env:
+#          INPUT_FILE_NAME: build/app/outputs/apk/app.apk
+#          SCAN_TYPE: apk
+#          OUTPUT_FILE_NAME: mobsf-report
+##      - name: Cleanup MobSF Permissions
+##        run: |
+##          set -e
+##          sudo chown -R runner:docker /home/runner/work/_temp/_github_home
+##          sudo chown -R runner:docker /home/runner/work/$REPO_NAME/$REPO_NAME
+##        env:
+##          REPO_NAME: ${{ github.event.repository.name }}
+#      - name: Upload MobSF Analysis PDF Result
 #        uses: actions/upload-artifact@v2
 #        with:
-#          name: nuclei.log
-#          path: nuclei.log
-#
-#      - name: GitHub Security Dashboard Alerts update
-#        uses: github/codeql-action/upload-sarif@v2
+#          name: mobsf-report-apk.pdf
+#          path: mobsf-report-apk.pdf
+#      - name: Upload MobSF Analysis JSON Result
+#        uses: actions/upload-artifact@v2
 #        with:
-#          sarif_file: nuclei.sarif
+#          name: mobsf-report-apk.json
+#          path: mobsf-report-apk.json
+
+#  mobsf_scan_ios:
+#    runs-on: [ self-hosted, ios ]
+#    steps:
+#      - name: Checkout Repo
+#        uses: actions/checkout@master
+#      - name: Set-up Java
+#        uses: actions/setup-java@v1
+#        with:
+#          java-version: '12.x'
+#      - name: Set-up Flutter
+#        uses: subosito/flutter-action@v1
+#        with:
+#          flutter-version: ${{ inputs.flutterVersion }}
+#      - name: Flutter Install Dependencies
+#        run: flutter pub get
+#      - name: Flutter Build
+#        run: flutter build ipa
+#      - name: Run MobSF Analysis
+#        uses: fundacaocerti/mobsf-action@v1.7.2
+#        env:
+#          INPUT_FILE_NAME: build/ios/archive/Runner.xcarchive
+#          SCAN_TYPE: ipa
+#          OUTPUT_FILE_NAME: mobsf-report
+#      - name: Upload MobSF Analysis PDF Result
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: mobsf-report-ipa.pdf
+#          path: mobsf-report-ipa.pdf
+#      - name: Upload MobSF Analysis JSON Result
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: mobsf-report-ipa.json
+#          path: mobsf-report-ipa.json
