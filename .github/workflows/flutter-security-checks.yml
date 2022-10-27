@@ -23,10 +23,10 @@ jobs:
           exclude_path: '${{ inputs.relative-exclude-path }}'
 #      - run: echo >\n
 #          !!!!!!!!!!!!!! Message from the security officer !!!!!!!!!!!!!!\n
-#          Should there be findings, think about if that token should be put into source code?\n
+#          Should there be findings, think about if that upload-key should be put into source code?\n
 #          \n
-#          If the token can be in the source code, put the path of that file into a text file and provide that path as an input parameter for the security checks job \"relative-exclude-path":" .pathtofile/secret_check_ignore_paths.txt\"\n
-#          If the token should not be in the source code, consider putting it into the GitHub secrets\n
+#          If the upload-key can be in the source code, put the path of that file into a text file and provide that path as an input parameter for the security checks job \"relative-exclude-path":" .pathtofile/secret_check_ignore_paths.txt\"\n
+#          If the upload-key should not be in the source code, consider putting it into the GitHub secrets\n
 
   trufflehog-package-analysis:
     runs-on: [ self-hosted ]
