@@ -1,0 +1,8 @@
+name: 'Setup Environment'
+description: 'Setting up Environment before every action'
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        source $ENVIRONMENT_FILE

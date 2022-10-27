@@ -1,0 +1,125 @@
+name: Flutter Branch Workflow
+env:
+  ENVIRONMENT_FILE: .github/.env
+
+on:
+  workflow_call:
+    inputs:
+      ssh-private-key:
+        required: true
+      qbs-maven-username:
+        default: ""
+      qbs-maven-password:
+        default: ""
+      ios-build-arguments:
+        description: 'any extra arguments such as using sksl or passing a variable using --dart-define etc. for iOS build'
+        required: false
+      android-build-arguments:
+        description: 'any extra arguments such as using sksl or passing a variable using --dart-define etc. for Android build'
+        required: false
+      upload-key:
+        description: 'Upload Key for apps.quickbirdstudios.com'
+        required: true
+      publish-to-testflight:
+        description: 'Should publish to Testflight?'
+        default: false
+      match-password:
+        description: 'Password for Match Repo'
+        required: true
+      apple-auth-key-id:
+        description: 'Auth Key'
+        required: true
+      apple-auth-key-issuer-id:
+        description: 'Auth Key Issuer ID'
+        required: true
+      apple-auth-key-content:
+        description: 'Auth Key Content'
+        required: true
+      apple-auth-key-encoding:
+        description: 'Auth Key Encoding'
+        required: true
+    output:
+      build-number:
+        type: String
+      
+jobs:
+  generate-build-number:
+    runs-on: [self-hosted]
+    outputs:
+      build-number: ${{ steps.build-number-generator.outputs.build-number }}
+    steps:
+      - name: Generate Build Number
+        id: build-number-generator
+        run: | 
+          BUILD-NUMBER=$(date +%s)
+          echo "build-number=$BUILD-NUMBER" >> $GITHUB-OUTPUT
+          echo "Build Number: $BUILD-NUMBER"
+  lint:
+    runs-on: [self-hosted]
+    needs: [generate-build-number]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: webfactory/ssh-agent@v0.6.0
+        with:
+          ssh-private-key: ${{ inputs.ssh-private-key }}
+      - uses: ./actions/setup-flutter
+      - run: flutter analyze
+
+  test:
+    runs-on: [self-hosted]
+    needs: [generate-build-number]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: webfactory/ssh-agent@v0.6.0
+        with:
+          ssh-private-key: ${{ inputs.ssh-private-key }}
+      - uses: ./actions/setup-flutter
+      - run: flutter test --dart-define STAGE=mock
+      
+  android-publish:
+      runs-on: [self-hosted]
+      needs: [generate-build-number, lint, test]
+      steps:
+        - uses: actions/checkout@v3
+        - uses: ./actions/setup-android
+          with:
+            qbsMavenUsername: ${{ inputs.qbs-maven-username }}
+            qbsMavenPassword: ${{ inputs.qbs-maven-password }}
+        - uses: ./actions/flutter-build
+          id: build
+          with:
+            clean: true
+            build-number: ${{ needs.generate-build-number.outputs.build-number }}
+            build-arguments: ${{ inputs.android-build-arguments }}
+            build-type: apk
+        - name: "Publishing to apps.quickbirdstudios.com"
+          uses: ./actions/qb-publish
+          with:
+            token: ${{ inputs.upload-key }}
+            file: ${{ steps.build.outputs.artifact-path }}
+
+  ios-publish:
+      runs-on: [self-hosted, macOS]
+      needs: [generate-build-number, lint, test]
+      steps:
+        - uses: actions/checkout@v3
+        - uses: webfactory/ssh-agent@v0.6.0
+          with:
+            ssh-private-key: ${{ inputs.ssh-private-key }}
+        - uses: ./actions/setup-ios
+        - uses: ./actions/flutter-build
+          id: build
+          with:
+            build-type: ipa
+            build-number: ${{ needs.generate-build-number.outputs.build-number }}
+            build-arguments: --no-codesign {{ inputs.ios-build-arguments }}
+            clean: true
+        - uses: ./actions/publish-ios
+          with:
+            apple-auth-key-id: ${{ inputs.apple-auth-key-id }}
+            apple-auth-key-issuer-id: ${{ inputs.apple-auth-key-issuer-id }}
+            apple-auth-key-content: ${{ inputs.apple-auth-key-content }}
+            apple-auth-key-encoding: ${{ inputs.apple-auth-key-encoding }}
+            token: ${{ inputs.upload-key }}
+            publish-to-testflight: false
+            match-password: ${{ inputs.match-password }}

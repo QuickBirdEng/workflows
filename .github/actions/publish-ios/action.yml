@@ -1,0 +1,60 @@
+name: 'Publish IPA to Apps@QuickBird and TestFlight (conditions apply)'
+description: 'Publishing Flutter iOS builds'
+inputs:
+  token:
+    description: 'Token'
+    required: true
+  publish_to_testflight:
+    description: 'Should publish to Testflight?'
+    default: false
+  match_password:
+    description: 'Password for Match Repo'
+    required: true
+  apple_auth_key_id:
+    description: 'Auth Key'
+    required: true
+  apple_auth_key_issuer_id:
+    description: 'Auth Key Issuer ID'
+    required: true
+  apple_auth_key_content:
+    description: 'Auth Key Content'
+    required: true
+  apple_auth_key_encoding:
+    description: 'Auth Key Encoding'
+    required: true
+outputs:
+  artifact_path: 
+    description: 'The path to the xcarchive created by this action'
+    value: ${{ steps.build.outputs.artifact_path }}
+runs:
+  using: "composite"
+  steps:
+    - uses: ./actions/setup-ios
+    - name: Publish to TestFlight
+      env:
+        MATCH_PASSWORD: ${{ inputs.match_password }}
+        APPLE_AUTH_KEY_ID: ${{ inputs.apple_auth_key_id }}
+        APPLE_AUTH_KEY_ISSUER_ID: ${{ inputs.apple_auth_key_issuer_id }}
+        APPLE_AUTH_KEY_CONTENT: ${{ inputs.apple_auth_key_content }}
+        APPLE_AUTH_KEY_ENCODING: ${{ inputs.apple_auth_key_encoding }}
+      shell: bash
+      if: ${{ inputs.publish_to_testflight == 'true' }}
+      run: cd ios && fastlane releaseToTestFlight
+    - name: Prepare for Upload to apps.quickbirdstudios.com
+      id: build_ipa
+      env:
+        MATCH_PASSWORD: ${{ inputs.match_password }}
+        APPLE_AUTH_KEY_ID: ${{ inputs.apple_auth_key_id }}
+        APPLE_AUTH_KEY_ISSUER_ID: ${{ inputs.apple_auth_key_issuer_id }}
+        APPLE_AUTH_KEY_CONTENT: ${{ inputs.apple_auth_key_content }}
+        APPLE_AUTH_KEY_ENCODING: ${{ inputs.apple_auth_key_encoding }}
+      shell: bash
+      run: |
+        cd ios && fastlane generate_ipa type:adhoc | tee fastlane.log
+        ipa_path=$(cat fastlane.log | grep -o '\IPA Path => .*' | sed -e 's/IPA Path => //g')
+        echo "ipa_path=$ipa_path" >> $GITHUB_OUTPUT
+    - name: "Publishing to apps.quickbirdstudios.com"
+      uses: ./actions/qb-publish
+      with:
+        token: ${{ inputs.token }}
+        file: ${{ steps.build_ipa.outputs.ipa_path }}

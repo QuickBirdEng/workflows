@@ -1,0 +1,50 @@
+name: 'Publish Android APK to Apps@QuickBird'
+description: 'Building IPA, APK or App Bundle for flutter applications'
+inputs:
+  build_number:
+    description: 'Build number'
+    required: true
+  use_cache:
+    description: 'Use cached version of packages (to speed up the build)'
+    required: false
+    default: true
+  clean:
+    description: 'Should perform a `flutter clean` first?'
+    required: false
+    default: false
+  build_arguments:
+    description: 'any extra arguments such as using sksl or passing a variable using --dart-define etc.'
+    required: false
+  token:
+    description: 'Token'
+    required: true
+  qbsMavenUsername:
+    description: 'Needed if the project uses a private artifact from QBS Maven'
+    required: false
+  qbsMavenPassword:
+    description: 'Needed if the project uses a private artifact from QBS Maven'
+    required: false
+outputs:
+  artifact_path: 
+    description: 'The path to the apk created by this action'
+    value: ${{ steps.build.outputs.artifact_path }}
+runs:
+  using: "composite"
+  steps:
+    - uses: ./actions/setup-android
+      with:
+        qbsMavenUsername: ${{ inputs.qbsMavenUsername }}
+        qbsMavenPassword: ${{ inputs.qbsMavenPassword }}
+    - uses: ./actions/flutter-build
+      id: build
+      with:
+        clean: ${{ inputs.clean }}
+        build_number: ${{ inputs.build_number }}
+        build_arguments: ${{ inputs.build_arguments }}
+        build_type: apk
+        use_cache: ${{ inputs.us_cache }}
+    - name: "Publishing to apps.quickbirdstudios.com"
+      uses: ./actions/qb-publish
+      with:
+        token: ${{ inputs.token }}
+        file: ${{ steps.build.outputs.artifact_path }}
