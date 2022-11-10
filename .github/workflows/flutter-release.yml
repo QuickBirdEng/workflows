@@ -63,7 +63,7 @@ jobs:
           with:
             qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
             qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
-        - uses: QuickBirdEng/actions/flutter-build@main
+        - uses: QuickBirdEng/actions/flutter-build@adjust-for-flutter-3-3
           id: build
           with:
             clean: true
