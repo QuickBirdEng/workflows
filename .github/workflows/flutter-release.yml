@@ -102,7 +102,7 @@ jobs:
             apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
             apple-auth-key-encoding: "base64"
             upload-key: ${{ secrets.UPLOAD_KEY }}
-            publish-to-testflight: true
+            publish-to-testflight: ${{ inputs.publish-to-testflight }}
             match-password: ${{ secrets.MATCH_PASSWORD }}
             match-repository: ${{ secrets.MATCH_REPO }}
             match-apple-id: ${{ secrets.APPLE_ID }}
