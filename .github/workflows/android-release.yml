@@ -1,0 +1,40 @@
+name: Release Workflow
+
+on:
+  workflow_call:
+    inputs:
+      setup-action-command: 
+        description: 'Extra command run at the start of each job'
+        type: string
+  workflow_dispatch:
+
+env:
+  ENVIRONMENT_FILE: .env
+
+jobs:
+  branch:
+    uses: ./.github/workflows/android-common.yml
+    with:
+      setup-action-command: ${{ inputs.setup-action-command }}
+    secrets: inherit
+
+  android-bundle:
+      runs-on: [self-hosted, Linux]
+      needs: [branch]
+      steps:
+        - uses: actions/checkout@v3
+        - run: echo "BuildForRelease=true" >> $GITHUB_ENV
+        - uses: QuickBirdEng/actions/setup-android@main
+          with:
+            key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
+            key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+            signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+            signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+        - name: Generate Bundle (.aab)
+          shell: bash
+          run: ./gradlew bundleRelease
+        - name: 'Upload AppBundle as artifact'
+          uses: actions/upload-artifact@v3
+          with:
+           name: app-bundle
+           path: app/build/outputs/bundle/release/app-release.aab

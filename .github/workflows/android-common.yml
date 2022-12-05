@@ -1,0 +1,41 @@
+name: Branch Workflow
+
+on:
+  workflow_call:
+
+env:
+  ENVIRONMENT_FILE: .env
+
+jobs:
+  unitTests:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: QuickBirdEng/actions/setup-android-for-build@main
+      - run: ./gradlew test
+  androidTests:
+    runs-on: [self-hosted, Linux, android]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: QuickBirdEng/actions/setup-android-for-build@main
+      - run: ./gradlew cAT
+  android-publish:
+      runs-on: [self-hosted, Linux]
+      needs: [unitTests, androidTests]
+      steps:
+        - uses: actions/checkout@v3
+        - run: echo "BuildForRelease=true" >> $GITHUB_ENV
+        - uses: QuickBirdEng/actions/setup-android@main
+          with:
+            key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
+            key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+            signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+            signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+        - name: Generate APK
+          shell: bash
+          run: ./gradlew assembleRelease
+        - name: "Publishing to apps.quickbirdstudios.com"
+          uses: QuickBirdEng/actions/qb-publish@main
+          with:
+            upload-key: ${{ secrets.UPLOAD_KEY }}
+            file: app/build/outputs/apk/release/app-release.apk

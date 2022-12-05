@@ -92,9 +92,6 @@ jobs:
           with:
             upload-key: ${{ secrets.UPLOAD_KEY }}
             file: ${{ steps.build.outputs.artifact-path }}
-            working-directory: ${{ inputs.working-directory }}
-
-
   ios-publish:
       runs-on: [self-hosted, macOS]
       needs: [generate-build-number, lint, test]

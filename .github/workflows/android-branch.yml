@@ -1,0 +1,11 @@
+name: Branch Workflow
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+
+jobs:
+  branch:
+    uses: ./.github/workflows/android-common.yml
+    secrets: inherit
