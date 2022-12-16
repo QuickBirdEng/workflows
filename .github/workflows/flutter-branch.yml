@@ -76,6 +76,7 @@ jobs:
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           working-directory: ${{ inputs.working-directory }}
+      - run: flutter test --coverage --dart-define STAGE=mock
       - uses: VeryGoodOpenSource/very_good_coverage@v2
         with:
           path: './coverage/lcov.info'
