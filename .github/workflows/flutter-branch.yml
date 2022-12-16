@@ -80,7 +80,7 @@ jobs:
         with:
           path: './coverage/lcov.info'
           min_coverage: ${{ env.CODE_COVERAGE }}
-          exclude: ${{ env.CODE_COVERAGE_EXLUDE_FILES }}
+          exclude: '**/*g.dart **/*freezed.dart'
       
   android-publish:
     runs-on: [self-hosted, Linux]
