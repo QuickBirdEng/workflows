@@ -63,6 +63,26 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
+
+  test-coverage:
+    if: env.CODE_COVERAGE_ENABLED == 'true'
+    runs-on: [self-hosted]
+    needs: [generate-build-number]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+      - uses: VeryGoodOpenSource/very_good_coverage@v2
+        with:
+          path: './coverage/lcov.info'
+          min_coverage: ${{ env.CODE_COVERAGE }}
+          exclude: ${{ env.CODE_COVERAGE_EXLUDE_FILES }}
       
   android-publish:
     runs-on: [self-hosted, Linux]
