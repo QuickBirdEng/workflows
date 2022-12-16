@@ -64,9 +64,9 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
   test-coverage:
-    if: ${{ env.CODE_COVERAGE_ENABLED }} == 'true'
     runs-on: [self-hosted]
     needs: [generate-build-number]
+    if: ${{ env.CODE_COVERAGE_ENABLED == 'true' }} 
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
