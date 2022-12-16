@@ -66,10 +66,10 @@ jobs:
   test-coverage:
     runs-on: [self-hosted]
     needs: [generate-build-number]
-    if: ${{ env.CODE_COVERAGE_ENABLED == 'true' }} 
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
+    if: ${{ env.CODE_COVERAGE_ENABLED == 'true' }} 
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
