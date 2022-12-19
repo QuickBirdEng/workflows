@@ -64,6 +64,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
   test-coverage:
+    if: env.CODE_COVERAGE_ENABLED == 'true'
     runs-on: [self-hosted]
     needs: [generate-build-number]
     defaults:
@@ -79,7 +80,7 @@ jobs:
       - run: flutter test --coverage --dart-define STAGE=mock
       - uses: VeryGoodOpenSource/very_good_coverage@v2
         with:
-          path: 'coverage/lcov.info'
+          path: './coverage/lcov.info'
           min_coverage: ${{ env.CODE_COVERAGE }}
           exclude: '**/*g.dart **/*freezed.dart'
       
