@@ -65,33 +65,26 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
       
   android-publish:
-      runs-on: [self-hosted, Linux]
-      needs: [generate-build-number, lint, test]
-      steps:
-        - uses: QuickBirdEng/actions/checkout-ssh@main
-          with:
-            ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-        - uses: QuickBirdEng/actions/setup-android@main
-          with:
-            key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
-            key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-            signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
-            signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
-            qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
-            qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
-        - uses: QuickBirdEng/actions/flutter-build@main
-          id: build
-          with:
-            clean: true
-            build-number: ${{ needs.generate-build-number.outputs.build-number }}
-            build-arguments: ${{ inputs.android-build-arguments }}
-            build-type: apk
-            working-directory: ${{ inputs.working-directory }}
-        - name: "Publishing to apps.quickbirdstudios.com"
-          uses: QuickBirdEng/actions/qb-publish@main
-          with:
-            upload-key: ${{ secrets.UPLOAD_KEY }}
-            file: ${{ steps.build.outputs.artifact-path }}
+    runs-on: [self-hosted, Linux]
+    needs: [generate-build-number, lint, test]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/publish-android@main
+        with:
+          clean: false
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+          build-arguments: ${{ inputs.android-build-arguments }}
+          working-directory: ${{ inputs.working-directory }}
+          key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
+          key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
+          qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
+          upload-key: ${{ secrets.UPLOAD_KEY }}
+
   ios-publish:
       runs-on: [self-hosted, macOS]
       needs: [generate-build-number, lint, test]
