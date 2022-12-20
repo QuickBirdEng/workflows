@@ -80,9 +80,9 @@ jobs:
       - run: cat ./coverage/lcov.info
       - uses: VeryGoodOpenSource/very_good_coverage@v2
         with:
-          path: './coverage/lcov.info'
+          path: "./coverage/lcov.info"
           min_coverage: ${{ env.CODE_COVERAGE }}
-          exclude: '**/*g.dart **/*freezed.dart'
+          exclude: "**/*g.dart **/*freezed.dart"
       
   android-publish:
     runs-on: [self-hosted, Linux]
