@@ -78,8 +78,7 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --coverage --dart-define STAGE=mock
-      - name: Output coverage file
-        run: cat ./coverage/lcov.info
+      - run: cat ./coverage/lcov.info
       - uses: VeryGoodOpenSource/very_good_coverage@v2
         with:
           path: './coverage/lcov.info'
