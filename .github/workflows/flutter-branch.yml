@@ -78,7 +78,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --coverage --dart-define STAGE=mock
       - run: cat ./coverage/lcov.info
-      - uses: QuickBirdEng/actions/checkout-ssh@feature/action-flutter-test-coverage
+      - uses: QuickBirdEng/actions/flutter-coverage@feature/action-flutter-test-coverage
         with:
           path: './coverage/lcov.info'
           min_coverage: 0
