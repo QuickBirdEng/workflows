@@ -80,9 +80,9 @@ jobs:
       - run: cat ./coverage/lcov.info
       - uses: QuickBirdEng/actions/flutter-coverage@feature/action-flutter-test-coverage
         with:
-          path: './app/coverage/lcov.info'
-          min_coverage: 0
-          exclude: '**/*g.dart **/*freezed.dart'
+          path: ${{ env.CODE_COVERAGE_FILE_PATH }}
+          min_coverage: ${{ env.CODE_COVERAGE }}
+          exclude: ${{ env.CODE_COVERAGE_EXLUDE_FILE }}
       
   android-publish:
     runs-on: [self-hosted, Linux]
