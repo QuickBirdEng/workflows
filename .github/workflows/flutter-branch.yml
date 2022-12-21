@@ -63,6 +63,7 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
+      
   test-coverage:
     runs-on: [self-hosted]
     needs: [generate-build-number]
@@ -77,7 +78,6 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --coverage --dart-define STAGE=mock
-      - run: cat ./coverage/lcov.info
       - uses: QuickBirdEng/actions/flutter-coverage@feature/action-flutter-test-coverage
         with:
           path: ${{ env.CODE_COVERAGE_FILE_PATH }}
