@@ -80,7 +80,7 @@ jobs:
       - run: cat ./coverage/lcov.info
       - uses: QuickBirdEng/actions/flutter-coverage@feature/action-flutter-test-coverage
         with:
-          path: './coverage/lcov.info'
+          path: './app/coverage/lcov.info'
           min_coverage: 0
           exclude: '**/*g.dart **/*freezed.dart'
       
