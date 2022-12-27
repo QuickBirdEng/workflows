@@ -35,56 +35,6 @@ jobs:
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
-  lint:
-    runs-on: [self-hosted]
-    needs: [generate-build-number]
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-      - run: flutter analyze
-  test:
-    runs-on: [self-hosted]
-    needs: [generate-build-number]
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-      - run: flutter test --dart-define STAGE=mock
-      
-  android-publish:
-    runs-on: [self-hosted, Linux]
-    needs: [generate-build-number, lint, test]
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/publish-android@main
-        with:
-          clean: false
-          build-number: ${{ needs.generate-build-number.outputs.build-number }}
-          build-arguments: ${{ inputs.android-build-arguments }}
-          working-directory: ${{ inputs.working-directory }}
-          key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
-          key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
-          signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
-          qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
-          qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
-          upload-key: ${{ secrets.UPLOAD_KEY }}
-
   ios-publish:
       runs-on: [self-hosted, macOS]
       needs: [generate-build-number, lint, test]
@@ -93,14 +43,6 @@ jobs:
           with:
             ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
         - uses: QuickBirdEng/actions/setup-ios@main
-        - uses: QuickBirdEng/actions/flutter-build@main
-          id: build
-          with:
-            build-type: ipa
-            build-number: ${{ needs.generate-build-number.outputs.build-number }}
-            build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
-            clean: true
-            working-directory: ${{ inputs.working-directory }}
         - uses: QuickBirdEng/actions/publish-ios@feature/fastlane
           with:
             apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
