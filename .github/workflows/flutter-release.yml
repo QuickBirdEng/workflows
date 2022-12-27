@@ -95,6 +95,9 @@ jobs:
           with:
             ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
         - uses: QuickBirdEng/actions/setup-ios@main
+          with:
+            platform: flutter
+            working-directory: ${{ inputs.working-directory }}
         - uses: QuickBirdEng/actions/flutter-build@main
           id: build
           with:
@@ -115,7 +118,7 @@ jobs:
             match-repository: ${{ secrets.MATCH_REPO }}
             match-apple-id: ${{ secrets.APPLE_ID }}
             match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
-            build-number: ${{ needs.generate-build-number.outputs.build-number }}
+            slack-slug: ${{ secrets.SLACK_SLUG }}
             working-directory: ${{ inputs.working-directory }}
   android-bundle:
       runs-on: [self-hosted, Linux]
