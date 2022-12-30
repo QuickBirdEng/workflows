@@ -95,9 +95,6 @@ jobs:
           with:
             ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
         - uses: QuickBirdEng/actions/setup-ios@main
-          with:
-            platform: flutter
-            working-directory: ${{ inputs.working-directory }}
         - uses: QuickBirdEng/actions/flutter-build@main
           id: build
           with:
@@ -118,8 +115,32 @@ jobs:
             match-repository: ${{ secrets.MATCH_REPO }}
             match-apple-id: ${{ secrets.APPLE_ID }}
             match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+            build-number: ${{ needs.generate-build-number.outputs.build-number }}
             slack-slug: ${{ secrets.SLACK_SLUG }}
             working-directory: ${{ inputs.working-directory }}
+        - name: Generate Name for Artifact
+          id: name-generator
+          if: ${{ github.ref_type == 'tag' }}
+          shell: bash
+          run: |
+            tag=${GITHUB_REF#refs/tags/}
+            tag=${tag//[!0-9.-_]/}
+            echo "artifact-name=$tag-ios" >> $GITHUB_OUTPUT
+        - name: Compress XCArchive File as tar.gz
+          id: compress-xcarchive
+          if: ${{ github.ref_type == 'tag' }}
+          uses: QuickBirdEng/actions/compress-artifact@main
+          with:
+            name: ${{ steps.name-generator.outputs.artifact-name }}
+            artifact-path: ${{ steps.build.outputs.artifact-path }}
+        - name: Upload Artifact
+          if: ${{ github.ref_type == 'tag' }}
+          uses: QuickBirdEng/actions/upload-artifact-qb@main
+          with:
+            access-key: ${{ secrets.DO_ACCESS_KEY }}
+            secret-key: ${{ secrets.DO_SECRET_KEY }}
+            artifact: ${{ steps.xcarchive.outputs.artifact-path }}
+
   android-bundle:
       runs-on: [self-hosted, Linux]
       needs: [generate-build-number, lint, test]
@@ -144,8 +165,22 @@ jobs:
             build-number: ${{ needs.generate-build-number.outputs.build-number }}
             build-arguments: ${{ inputs.android-build-arguments }}
             working-directory: ${{ inputs.working-directory }}
-        - name: 'Upload AppBundle as artifact'
-          uses: actions/upload-artifact@v3
+        - name: Generate Name for Artifact
+          id: name-generator
+          shell: bash
+          run: |
+            tag=${GITHUB_REF#refs/tags/}
+            tag=${tag//[!0-9.-_]/}
+            echo "artifact-name=$tag-android" >> $GITHUB_OUTPUT
+        - name: Compress AAB File as tar.gz
+          id: compress-aab
+          uses: QuickBirdEng/actions/compress-artifact@main
           with:
-           name: app-bundle
-           path: ${{ steps.flutter-build.outputs.artifact-path }}
+            name: ${{ steps.name-generator.outputs.artifact-name }}
+            artifact-path: ${{ steps.flutter-build.outputs.artifact-path }}
+        - name: 'Upload Artifact'
+          uses: QuickBirdEng/actions/upload-artifact-qb@main
+          with:
+            access-key: ${{ secrets.DO_ACCESS_KEY }}
+            secret-key: ${{ secrets.DO_SECRET_KEY }}
+            artifact: ${{ steps.compress-aab.outputs.artifact-path }}
