@@ -1,0 +1,45 @@
+name: iOS Common Workflow
+env:
+  ENVIRONMENT_FILE: .env
+
+on:
+  workflow_call:
+    inputs:
+      fastlane-action-name:
+        description: 'Value can be test or build'
+        type: string
+        required: true
+  workflow_dispatch:
+
+jobs:
+  build-or-test:
+    runs-on: [self-hosted, MacOS]
+    steps:
+      - name: Make sure command is either build or test
+        run: |
+          if [[ '${{ inputs.fastlane-action-name }}' != 'build' && '${{ inputs.fastlane-action-name }}' != 'test' ]]; then
+            echo "Wrong input passed to 'fastlane-action-name'. Accepted values are 'test' and 'build'".
+            exit 1
+          fi
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/setup-ios@main
+      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - shell: bash -l {0}
+        run: gem install bundler && bundle update
+      - name: Setup API Key (if secret is set)
+        shell: bash
+        run: |
+          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
+            echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
+          fi
+      - shell: bash -l {0}
+        env:
+          MATCH_REPO: ${{ secrets.MATCH_REPO }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APPLE_AUTH_KEY_ID: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          APPLE_AUTH_KEY_ISSUER_ID: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          APPLE_AUTH_KEY_CONTENT: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          APPLE_AUTH_KEY_ENCODING: "base64"
+        run: fastlane ${{ inputs.fastlane-action-name }}

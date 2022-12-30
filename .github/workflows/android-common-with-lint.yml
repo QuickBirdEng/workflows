@@ -12,33 +12,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: QuickBirdEng/actions/setup-android-for-build@main
+      - run: ./gradlew quickLint
   unitTests:
     runs-on: [self-hosted, Linux]
     steps:
       - uses: actions/checkout@v3
       - uses: QuickBirdEng/actions/setup-android-for-build@main
-      - name: Setup API Key (if secret is set)
-        shell: bash
-        run: |
-          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
-            echo "RAW_API_KEY=${{ secrets.RAW_API_KEY }}" >> .env.credentials
-          fi
       - run: ./gradlew test
   androidTests:
     runs-on: [self-hosted, Linux, android]
     steps:
       - uses: actions/checkout@v3
       - uses: QuickBirdEng/actions/setup-android-for-build@main
-      - name: Setup API Key (if secret is set)
-        shell: bash
-        run: |
-          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
-            echo "RAW_API_KEY=${{ secrets.RAW_API_KEY }}" >> .env.credentials
-          fi
       - run: ./gradlew cAT
   android-publish:
       runs-on: [self-hosted, Linux]
-      needs: [unitTests, androidTests]
+      needs: [lint, unitTests, androidTests]
       steps:
         - uses: actions/checkout@v3
         - run: echo "BuildForRelease=true" >> $GITHUB_ENV
@@ -51,12 +45,6 @@ jobs:
             key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
             signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
             signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
-        - name: Setup API Key (if secret is set)
-          shell: bash
-          run: |
-            if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
-              echo "RAW_API_KEY=${{ secrets.RAW_API_KEY }}" >> .env.credentials
-            fi
         - name: Generate APK
           shell: bash
           run: ./gradlew assembleRelease

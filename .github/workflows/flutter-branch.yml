@@ -114,4 +114,5 @@ jobs:
             match-apple-id: ${{ secrets.APPLE_ID }}
             match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
             build-number: ${{ needs.generate-build-number.outputs.build-number }}
+            slack-slug: ${{ secrets.SLACK_SLUG }}
             working-directory: ${{ inputs.working-directory }}

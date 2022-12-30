@@ -1,0 +1,94 @@
+name: iOS Release Workflow
+env:
+  ENVIRONMENT_FILE: .env
+
+on:
+  workflow_call:
+    inputs:
+      run-check-version-job:
+        description: 'Run check version job'
+        type: boolean
+        default: false
+      fastlane-action-name:
+        description: 'Value can be test or build'
+        type: string
+        required: true
+  workflow_dispatch:
+
+jobs:
+  check_version:
+    runs-on: [self-hosted, MacOS]
+    if: inputs.run-check-version-job == true
+    continue-on-error: true
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/setup-ios@main
+      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - shell: bash -l {0}
+        run: gem install bundler && bundle update
+      - name: Setup API Key (if secret is set)
+        shell: bash
+        run: |
+          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
+            echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
+          fi
+      - shell: bash -l {0}
+        env:
+          APPLE_AUTH_KEY_ID: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          APPLE_AUTH_KEY_ISSUER_ID: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          APPLE_AUTH_KEY_CONTENT: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          APPLE_AUTH_KEY_ENCODING: "base64"
+        run: fastlane check_version
+  common:
+    uses: QuickBirdEng/workflows/.github/workflows/ios-common.yml@main
+    needs: [check_version]
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    with:
+      fastlane-action-name: ${{ inputs.fastlane-action-name }}
+    secrets: inherit
+  publish:
+    runs-on: [self-hosted, MacOS]
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    needs: [common, check_version]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/setup-ios@main
+      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - uses: QuickBirdEng/actions/setup-fastlane-environment@main
+        with:
+          match-repository: ${{ secrets.MATCH_REPO }}
+          match-password: ${{ secrets.MATCH_PASSWORD }}
+          match-apple-id: ${{ secrets.APPLE_ID }}
+          match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          apple-auth-key-encoding: "base64"
+          slack-slug: ${{ secrets.SLACK_SLUG }}
+      - shell: bash -l {0}
+        run: gem install bundler && bundle update
+      - name: Setup API Key (if secret is set)
+        shell: bash
+        run: |
+          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
+            echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
+          fi
+      - name: Upload to TestFlight
+        id: release
+        shell: bash -l {0}
+        run: |
+          set -eo pipefail && fastlane release | tee fastlane.log
+          xcarchive_path=$(cat fastlane.log | grep -o '\XCArchive Path => .*' | sed -e 's/XCArchive Path => //g')
+          echo "xcarchive-path=$xcarchive_path" >> $GITHUB_OUTPUT
+      - name: Compress & Upload Artifact to QB Spaces
+        if: ${{ github.ref_type == 'tag' }}
+        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        with:
+          access-key: ${{ secrets.DO_ACCESS_KEY }}
+          secret-key: ${{ secrets.DO_SECRET_KEY }}
+          name-suffix: ios
+          artifact-path: ${{ steps.release.outputs.xcarchive-path }}

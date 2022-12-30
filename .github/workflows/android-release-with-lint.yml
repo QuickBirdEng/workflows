@@ -1,7 +1,7 @@
 name: Release Workflow
 
 on:
-  workflow_call:
+  workflow_call:  
   workflow_dispatch:
 
 env:
@@ -22,7 +22,7 @@ jobs:
 
   branch:
     needs: [generate-build-number]
-    uses: ./.github/workflows/android-common.yml
+    uses: ./.github/workflows/android-common-with-lint.yml
     with:
       build-number: ${{ needs.generate-build-number.outputs.build-number }}
     secrets: inherit
@@ -42,12 +42,6 @@ jobs:
             key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
             signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
             signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
-      - name: Setup API Key (if secret is set)
-        shell: bash
-        run: |
-          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
-            echo "RAW_API_KEY=${{ secrets.RAW_API_KEY }}" >> .env.credentials
-          fi
         - name: Generate Bundle (.aab)
           shell: bash
           run: ./gradlew bundleRelease
