@@ -74,6 +74,10 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           working-directory: ${{ inputs.working-directory }}
