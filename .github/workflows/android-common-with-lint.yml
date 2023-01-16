@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: QuickBirdEng/actions/setup-android-for-build@main
-      - run: ./gradlew cAT
+      - run: ./gradlew cAT --stacktrace
   android-publish:
       runs-on: [self-hosted, Linux]
       needs: [lint, unitTests, androidTests]

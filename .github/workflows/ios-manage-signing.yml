@@ -1,0 +1,65 @@
+name: iOS Certificates and Provisioning Profiles Management Workflow
+env:
+  ENVIRONMENT_FILE: .env
+
+on:
+  workflow_call:
+    inputs:
+      certificate-type:
+        description: 'Possible values are development and distribution'
+        type: string
+        default: development
+      delete-certificates-from-repo:
+        description: 'Set to true only if the certificates have expired'
+        type: boolean
+        default: false
+jobs:
+  renew:
+    runs-on: [self-hosted, macOS]
+    if: contains('["nasirky","acpoppe","grafele"]', github.triggering_actor)
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/setup-environment@main
+      - run: git clone -b main --single-branch ${{ secrets.MATCH_REPO }}
+      - name: Remove Certificates
+        if: inputs.delete-certificates-from-repo
+        run: |
+          repo_name=$(basename ${{secrets.MATCH_REPO }}) && repo_name=${repo_name/.git/}
+          cd $repo_name/certs
+          [[ '${{ inputs.certificate-type }}' == 'distribution' ]] && rm -rf distribution || rm -rf development
+      - name: Remove existing profiles from match repository
+        run: |
+          repo_name=$(basename ${{secrets.MATCH_REPO }}) && repo_name=${repo_name/.git/}
+          cd $repo_name
+
+          if [[ '${{ inputs.certificate-type }}' == 'distribution' ]]; then
+            rm -f profiles/adhoc/*${{ env.BUNDLE_ID }}*
+            rm -f profiles/appstore/*${{ env.BUNDLE_ID }}*
+          else
+             rm -f profiles/development/*${{ env.BUNDLE_ID }}*
+          fi
+
+          git remote add match ${{ secrets.MATCH_REPO }}
+          git add . && git commit -m "Remove ${{ inputs.certificate-type }} profiles and (optionally) certificates for ${{ env.BUNDLE_ID }}" && git push match || true
+      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - uses: QuickBirdEng/actions/setup-fastlane-environment@main
+        with:
+          match-repository: ${{ secrets.MATCH_REPO }}
+          match-password: ${{ secrets.MATCH_PASSWORD }}
+          match-apple-id: ${{ secrets.APPLE_ID }}
+          match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          apple-auth-key-encoding: "base64"
+      - name: Generate/Download provisioning profiles & (maybe) certificates
+        shell: bash -l {0}
+        run: |
+            if [[ '${{ inputs.certificate-type }}' == 'distribution' ]]; then
+              fastlane match_for_signing type:appstore refresh_certificates:true
+              fastlane match_for_signing type:adhoc refresh_certificates:true
+            else
+              fastlane match_for_signing type:development refresh_certificates:true
+            fi
