@@ -1,0 +1,56 @@
+name: iOS Certificate & Profiles Renewal Workflow
+env:
+  ENVIRONMENT_FILE: .env
+
+on:
+  workflow_call:
+    inputs:
+      profile-type:
+        type: string
+        description: 'Possible values are development, adhoc, appstore and all'
+        default: all
+      
+jobs:
+  clean-up-match:
+    runs-on: [self-hosted, macOS]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/setup-environment@main
+      - run: git clone -b main --single-branch ${{ secrets.MATCH_REPO }}
+      - name: Remove existing profiles
+        run: |
+          repo_name=$(basename ${{secrets.MATCH_REPO }}) && repo_name=${repo_name/.git/}
+          cd $repo_name/profiles
+          ([[ ${{ inputs.profile-type == 'development' }} ]] || [[ ${{ inputs.profile-type == 'all' }} ]]) && rm -f development/*${{ env.BUNDLE_ID }}*
+          ([[ ${{ inputs.profile-type == 'adhoc' }} ]] || [[ ${{ inputs.profile-type == 'all' }} ]]) && rm -f adhoc/*${{ env.BUNDLE_ID }}*
+          ([[ ${{ inputs.profile-type == 'appstore' }} ]] || [[ ${{ inputs.profile-type == 'all' }} ]]) && rm -f appstore/*${{ env.BUNDLE_ID }}*
+      - name: Commit changes to the repo
+        run: |
+          repo_name=$(basename ${{secrets.MATCH_REPO }}) && repo_name=${repo_name/.git/}
+          cd $repo_name
+          git remote add match ${{ secrets.MATCH_REPO }}
+          git add . && git commit -m "Remove ${{ inputs.profile-type }} provisioning profiles for ${{ env.BUNDLE_ID }}" && git push match || true
+      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - uses: QuickBirdEng/actions/setup-fastlane-environment@main
+        with:
+          match-repository: ${{ secrets.MATCH_REPO }}
+          match-password: ${{ secrets.MATCH_PASSWORD }}
+          match-apple-id: ${{ secrets.APPLE_ID }}
+          match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          apple-auth-key-encoding: "base64"
+      - name: Generate/Download (All) new provisioning profiles
+        if: ${{ inputs.profile-type == 'all' }}
+        shell: bash -l {0}
+        run: |
+            fastlane match_for_signing refresh_certificates:true type:appstore
+            fastlane match_for_signing refresh_certificates:true type:development
+            fastlane match_for_signing refresh_certificates:true type:adhoc
+      - name: Generate only certain provisioning profile
+        if: ${{ inputs.profile-type != 'all' }}
+        shell: bash -l {0}
+        run: fastlane match_for_signing refresh_certificates:true type:${{ inputs.profile-type }}
