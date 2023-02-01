@@ -56,7 +56,7 @@ jobs:
       fastlane-action-name: ${{ inputs.fastlane-action-name }}
     secrets: inherit
   publish:
-    runs-on: [self-hosted, MacOS]
+    runs-on: [self-hosted, MacOS, legacy-flutter]
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     needs: [common, check_version]
     steps:

@@ -117,7 +117,7 @@ jobs:
           with:
             ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
         - uses: QuickBirdEng/actions/setup-ios@main
-        - uses: QuickBirdEng/actions/flutter-build@main
+        - uses: QuickBirdEng/actions/flutter-build@feature/legacy-flutter-support
           id: build
           with:
             build-type: ipa
