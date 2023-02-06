@@ -46,9 +46,10 @@ jobs:
           shell: bash
           run: ./gradlew bundleRelease
         - name: Compress & Upload Artifact to QB Spaces
-          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@upload-to-assets
           with:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
+            repo-token: ${{ secrets.GITHUB_TOKEN }}
             name-suffix: android
             artifact-path: app/build/outputs/bundle/release/app-release.aab

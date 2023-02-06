@@ -86,9 +86,10 @@ jobs:
           echo "xcarchive-path=$xcarchive_path" >> $GITHUB_OUTPUT
       - name: Compress & Upload Artifact to QB Spaces
         if: ${{ github.ref_type == 'tag' }}
-        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@upload-to-assets
         with:
           access-key: ${{ secrets.DO_ACCESS_KEY }}
           secret-key: ${{ secrets.DO_SECRET_KEY }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
           name-suffix: ios
           artifact-path: ${{ steps.release.outputs.xcarchive-path }}

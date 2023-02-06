@@ -95,7 +95,7 @@ jobs:
           with:
             ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
         - uses: QuickBirdEng/actions/setup-ios@main
-        - uses: QuickBirdEng/actions/flutter-build@feature/legacy-flutter-support
+        - uses: QuickBirdEng/actions/flutter-build@main
           id: build
           with:
             build-type: ipa
@@ -119,13 +119,13 @@ jobs:
             slack-slug: ${{ secrets.SLACK_SLUG }}
             working-directory: ${{ inputs.working-directory }}
         - name: Compress & Upload Artifact to QB Spaces
-          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@upload-to-assets
           with:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
+            repo-token: ${{ secrets.GITHUB_TOKEN }}
             name-suffix: ios
             artifact-path: ${{ steps.build.outputs.artifact-path }}
-
   android-bundle:
       runs-on: [self-hosted, Linux]
       needs: [generate-build-number, lint, test]
@@ -142,7 +142,7 @@ jobs:
             signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
             qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
             qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
-        - uses: QuickBirdEng/actions/flutter-build@feature/legacy-flutter-support
+        - uses: QuickBirdEng/actions/flutter-build@main
           id: flutter-build
           with:
             clean: true
@@ -151,9 +151,10 @@ jobs:
             build-arguments: ${{ inputs.android-build-arguments }}
             working-directory: ${{ inputs.working-directory }}
         - name: Compress & Upload Artifact to QB Spaces
-          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@upload-to-assets
           with:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
+            repo-token: ${{ secrets.GITHUB_TOKEN }}
             name-suffix: android
             artifact-path: ${{ steps.flutter-build.outputs.artifact-path }}
