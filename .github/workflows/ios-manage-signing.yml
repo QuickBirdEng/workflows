@@ -27,6 +27,7 @@ jobs:
         if: inputs.delete-certificates-from-repo
         run: |
           repo_name=$(basename ${{secrets.MATCH_REPO }}) && repo_name=${repo_name/.git/}
+          echo $repo_name
           cd $repo_name/certs
           [[ '${{ inputs.certificate-type }}' == 'distribution' ]] && rm -rf distribution || rm -rf development
       - name: Remove existing profiles from match repository

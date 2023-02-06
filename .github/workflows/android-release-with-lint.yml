@@ -50,5 +50,6 @@ jobs:
           with:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
+            repo-token: ${{ secrets.GITHUB_TOKEN }}
             name-suffix: android
             artifact-path: app/build/outputs/bundle/release/app-release.aab

@@ -123,9 +123,9 @@ jobs:
           with:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
+            repo-token: ${{ secrets.GITHUB_TOKEN }}
             name-suffix: ios
             artifact-path: ${{ steps.build.outputs.artifact-path }}
-
   android-bundle:
       runs-on: [self-hosted, Linux]
       needs: [generate-build-number, lint, test]
@@ -155,5 +155,6 @@ jobs:
           with:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
+            repo-token: ${{ secrets.GITHUB_TOKEN }}
             name-suffix: android
             artifact-path: ${{ steps.flutter-build.outputs.artifact-path }}
