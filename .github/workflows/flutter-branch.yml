@@ -45,7 +45,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
+      - uses: QuickBirdEng/actions/setup-flutter@feature/DEV-137-build-runner-optional
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
@@ -59,7 +59,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
+      - uses: QuickBirdEng/actions/setup-flutter@feature/DEV-137-build-runner-optional
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
@@ -74,7 +74,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
+      - uses: QuickBirdEng/actions/setup-flutter@feature/DEV-137-build-runner-optional
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --coverage --dart-define STAGE=mock
