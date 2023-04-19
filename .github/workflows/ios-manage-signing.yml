@@ -5,6 +5,12 @@ env:
 on:
   workflow_call:
     inputs:
+      platform: 
+        description: 'flutter or ios?'
+        default: ios
+      working-directory:
+        description: 'Provide working directory (if you aren't using default directory structure)'
+        default: '.'
       certificate-type:
         description: 'Possible values are development and distribution'
         type: string
@@ -16,6 +22,8 @@ on:
 jobs:
   renew:
     runs-on: [self-hosted, macOS]
+    defaults:
+      run: working-directory: ${{ inputs.working-directry }}
     if: contains('["nasirky","acpoppe","grafele"]', github.triggering_actor)
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
@@ -46,6 +54,9 @@ jobs:
           git remote add match ${{ secrets.MATCH_REPO }}
           git add . && git commit -m "Remove ${{ inputs.certificate-type }} profiles and (optionally) certificates for ${{ env.BUNDLE_ID }}" && git push match || true
       - uses: QuickBirdEng/actions/setup-fastlane@main
+        with: 
+          platform: ${{ inputs.platform }}
+          working-directory: ${{ inputs.working-directory }}
       - uses: QuickBirdEng/actions/setup-fastlane-environment@main
         with:
           match-repository: ${{ secrets.MATCH_REPO }}
@@ -59,6 +70,8 @@ jobs:
       - name: Generate/Download provisioning profiles & (maybe) certificates
         shell: bash -l {0}
         run: |
+            [[ "${{ inputs.platform }}" == "flutter" ]] && cd ios
+
             if [[ '${{ inputs.certificate-type }}' == 'distribution' ]]; then
               fastlane match_for_signing type:appstore refresh_certificates:true
               fastlane match_for_signing type:adhoc refresh_certificates:true
