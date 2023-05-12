@@ -52,7 +52,7 @@ jobs:
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           working-directory: ${{ inputs.working-directory }}
-      - run: flutter analyze
+      - run: flutter analyze --verbose
   test:
     runs-on: [self-hosted]
     needs: [generate-build-number]
