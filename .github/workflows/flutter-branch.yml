@@ -41,7 +41,6 @@ jobs:
           echo "Build Number: $build_number"
   lint:
     runs-on: [self-hosted]
-    needs: [generate-build-number]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -55,7 +54,6 @@ jobs:
       - run: flutter analyze
   test:
     runs-on: [self-hosted]
-    needs: [generate-build-number]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -70,7 +68,6 @@ jobs:
       
   test-coverage:
     runs-on: [self-hosted]
-    needs: [generate-build-number]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
