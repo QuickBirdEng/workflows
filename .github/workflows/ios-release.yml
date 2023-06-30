@@ -57,6 +57,9 @@ jobs:
     secrets: inherit
   publish:
     runs-on: [self-hosted, MacOS]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     needs: [common, check_version]
     steps:
@@ -65,6 +68,8 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
       - uses: QuickBirdEng/actions/setup-ios@main
       - uses: QuickBirdEng/actions/setup-fastlane@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
       - uses: QuickBirdEng/actions/setup-fastlane-environment@main
         with:
           match-repository: ${{ secrets.MATCH_REPO }}

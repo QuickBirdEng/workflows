@@ -9,11 +9,20 @@ on:
         description: 'Value can be test or build'
         type: string
         required: true
+      working-directory:
+        description: 'working directory to execute the flow in'
+        type: string
+        default: '.'
+        required: false
+
   workflow_dispatch:
 
 jobs:
   build-or-test:
     runs-on: [self-hosted, MacOS]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     steps:
       - name: Make sure command is either build or test
         run: |
@@ -26,6 +35,8 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
       - uses: QuickBirdEng/actions/setup-ios@main
       - uses: QuickBirdEng/actions/setup-fastlane@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
       - shell: bash -l {0}
         run: gem install bundler && bundle update
       - name: Setup API Key (if secret is set)
