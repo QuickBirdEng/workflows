@@ -23,7 +23,11 @@ on:
         default: '.'
 
   workflow_dispatch:
-      
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   generate-build-number:
     runs-on: [self-hosted]

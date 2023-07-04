@@ -21,6 +21,11 @@ on:
         description: 'Provide working directory (if you are not using default directory structure)'
         type: string
         default: '.'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   renew:
     runs-on: [self-hosted, macOS]
