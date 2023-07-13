@@ -10,7 +10,7 @@ on:
         type: string
         default: 'ios'
       certificate-type:
-        description: 'Possible values are development and distribution'
+        description: 'Possible values are development, distribution, or both'
         type: string
         default: development
       delete-certificates-from-repo:
@@ -79,10 +79,11 @@ jobs:
         shell: bash -l {0}
         run: |
             [[ "${{ inputs.platform }}" == "flutter" ]] && cd ios
-
-            if [[ '${{ inputs.certificate-type }}' == 'distribution' ]]; then
+            
+            if [[ '${{ inputs.certificate-type }}' == 'distribution' || '${{ inputs.certificate-type }}' == 'both' ]]; then
               fastlane match_for_signing type:appstore refresh_certificates:true
               fastlane match_for_signing type:adhoc refresh_certificates:true
-            else
+            fi
+            if [[ '${{ inputs.certificate-type }}' == 'development' || '${{ inputs.certificate-type }}' == 'both' ]]; then
               fastlane match_for_signing type:development refresh_certificates:true
             fi
