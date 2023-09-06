@@ -52,7 +52,7 @@ jobs:
           repo_name=$(basename ${{secrets.MATCH_REPO }}) && repo_name=${repo_name/.git/}
           cd $repo_name
 
-          if [[ '${{ env.BUNDLE_ID' }} == '' ]]; then
+          if [[ ${{ env.BUNDLE_ID }} == '' ]]; then
             echo "BUNDLE_ID is not set. Please set it in the .env file"
             exit 1;
           fi
