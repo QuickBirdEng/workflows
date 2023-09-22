@@ -8,7 +8,7 @@ env:
   ENVIRONMENT_FILE: .env
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-bundle-release
   cancel-in-progress: true
 
 jobs:
