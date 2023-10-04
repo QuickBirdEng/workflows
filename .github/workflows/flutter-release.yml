@@ -21,6 +21,10 @@ on:
         description: 'the directory to run each job of the workflow in'
         type: string
         default: '.'
+      artifact-name-suffix:
+        description: 'the suffix to add to the artifact name'
+        type: string
+        default: ''
 
   workflow_dispatch:
 
@@ -40,6 +44,22 @@ jobs:
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
+
+  name-suffix-generation:
+    runs-on: [self-hosted]
+    outputs:
+      name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
+    steps:
+      - name: Generate Name Suffix
+        id: name-suffix-generator
+        shell: bash
+        run: |
+          if [[ '${{ inputs.artifact-name-suffix }}' != '' ]]; then
+            echo "name-suffix=${{ inputs.artifact-name-suffix }}-" >> $GITHUB_OUTPUT
+          else
+            echo "name-suffix=" >> $GITHUB_OUTPUT
+          fi
+
   lint:
     runs-on: [self-hosted]
     defaults:
@@ -67,7 +87,7 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
-      
+
   android-publish:
     runs-on: [self-hosted, Linux]
     needs: [generate-build-number, lint, test]
@@ -91,7 +111,7 @@ jobs:
   
   ios-publish:
       runs-on: [self-hosted, macOS]
-      needs: [generate-build-number, lint, test]
+      needs: [generate-build-number, lint, test, name-suffix-generation]
       steps:
         - uses: QuickBirdEng/actions/checkout-ssh@main
           with:
@@ -126,11 +146,12 @@ jobs:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
             repo-token: ${{ secrets.GITHUB_TOKEN }}
-            name-suffix: ios
+            name-suffix: ${{ needs.name-suffix-generation.outputs.name-suffix }}ios
             artifact-path: ${{ steps.build.outputs.artifact-path }}
+
   android-bundle:
       runs-on: [self-hosted, Linux]
-      needs: [generate-build-number, lint, test]
+      needs: [generate-build-number, lint, test, name-suffix-generation]
       if: ${{ github.ref_type == 'tag' }}
       steps:
         - uses: QuickBirdEng/actions/checkout-ssh@main
@@ -158,5 +179,5 @@ jobs:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
             repo-token: ${{ secrets.GITHUB_TOKEN }}
-            name-suffix: android
+            name-suffix: ${{ needs.name-suffix-generation.outputs.name-suffix }}android
             artifact-path: ${{ steps.flutter-build.outputs.artifact-path }}
