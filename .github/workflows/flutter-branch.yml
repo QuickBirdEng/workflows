@@ -53,7 +53,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
   test:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, macOS]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -67,7 +67,7 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
       
   test-coverage:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, macOS]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
