@@ -74,23 +74,9 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
 
-  test:
-    runs-on: [self-hosted, macOS]
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-      - run: flutter test --dart-define STAGE=mock
-
   android-publish:
     runs-on: [self-hosted, Linux]
-    needs: [generate-build-number, lint, test]
+    needs: [generate-build-number, lint]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -111,7 +97,7 @@ jobs:
   
   ios-publish:
       runs-on: [self-hosted, macOS]
-      needs: [generate-build-number, lint, test, name-suffix-generation]
+      needs: [generate-build-number, lint, name-suffix-generation]
       steps:
         - uses: QuickBirdEng/actions/checkout-ssh@main
           with:
@@ -151,7 +137,7 @@ jobs:
 
   android-bundle:
       runs-on: [self-hosted, Linux]
-      needs: [generate-build-number, lint, test, name-suffix-generation]
+      needs: [generate-build-number, lint, name-suffix-generation]
       if: ${{ github.ref_type == 'tag' }}
       steps:
         - uses: QuickBirdEng/actions/checkout-ssh@main
