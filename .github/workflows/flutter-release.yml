@@ -66,10 +66,10 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@logging
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
+      - uses: QuickBirdEng/actions/setup-flutter@logging
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
@@ -78,10 +78,10 @@ jobs:
     runs-on: [self-hosted, Linux]
     needs: [generate-build-number, lint]
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@logging
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/publish-android@main
+      - uses: QuickBirdEng/actions/publish-android@logging
         with:
           clean: true
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
@@ -99,11 +99,11 @@ jobs:
       runs-on: [self-hosted, macOS]
       needs: [generate-build-number, lint, name-suffix-generation]
       steps:
-        - uses: QuickBirdEng/actions/checkout-ssh@main
+        - uses: QuickBirdEng/actions/checkout-ssh@logging
           with:
             ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-        - uses: QuickBirdEng/actions/setup-ios@main
-        - uses: QuickBirdEng/actions/flutter-build@main
+        - uses: QuickBirdEng/actions/setup-ios@logging
+        - uses: QuickBirdEng/actions/flutter-build@logging
           id: build
           with:
             build-type: ipa
@@ -111,7 +111,7 @@ jobs:
             build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
             clean: true
             working-directory: ${{ inputs.working-directory }}
-        - uses: QuickBirdEng/actions/publish-ios@main
+        - uses: QuickBirdEng/actions/publish-ios@logging
           with:
             apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
             apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
@@ -127,7 +127,7 @@ jobs:
             slack-slug: ${{ secrets.SLACK_SLUG }}
             working-directory: ${{ inputs.working-directory }}
         - name: Compress & Upload Artifact to QB Spaces
-          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@logging
           with:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
@@ -140,10 +140,10 @@ jobs:
       needs: [generate-build-number, lint, name-suffix-generation]
       if: ${{ github.ref_type == 'tag' }}
       steps:
-        - uses: QuickBirdEng/actions/checkout-ssh@main
+        - uses: QuickBirdEng/actions/checkout-ssh@logging
           with:
             ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-        - uses: QuickBirdEng/actions/setup-android@main
+        - uses: QuickBirdEng/actions/setup-android@logging
           with:
             key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
             key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -151,7 +151,7 @@ jobs:
             signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
             qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
             qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
-        - uses: QuickBirdEng/actions/flutter-build@main
+        - uses: QuickBirdEng/actions/flutter-build@logging
           id: flutter-build
           with:
             clean: true
@@ -160,7 +160,7 @@ jobs:
             build-arguments: ${{ inputs.android-build-arguments }}
             working-directory: ${{ inputs.working-directory }}
         - name: Compress & Upload Artifact to QB Spaces
-          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+          uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@logging
           with:
             access-key: ${{ secrets.DO_ACCESS_KEY }}
             secret-key: ${{ secrets.DO_SECRET_KEY }}
