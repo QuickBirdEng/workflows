@@ -83,6 +83,7 @@ jobs:
 
   build-ios:
     runs-on: [self-hosted, macOS]
+    needs: [generate-build-number, test, lint]
     steps:
       - uses: QuickBirdEng/actions/flutter-build@main
         with:
@@ -93,6 +94,7 @@ jobs:
 
   build-android:
     runs-on: [self-hosted]
+    needs: [generate-build-number, test, lint]
     steps:
       - uses: QuickBirdEng/actions/flutter-build@main
         with:
