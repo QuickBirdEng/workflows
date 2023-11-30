@@ -88,33 +88,11 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-
-      - uses: QuickBirdEng/actions/setup-fastlane-environment@main
-        with:
-          apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
-          apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
-          apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
-          apple-auth-key-encoding: "base64"
-          match-password: ${{ secrets.MATCH_PASSWORD }}
-          match-repository: ${{ secrets.MATCH_REPO }}
-          match-apple-id: ${{ secrets.APPLE_ID }}
-          match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
-          match-keychain-password: ${{ secrets.FASTLANE_KEYCHAIN_PASSWORD }}
-          build-number: ${{ needs.generate-build-number.outputs.build-number }}
-          slack-slug: ${{ secrets.SLACK_SLUG }}
-
-      - uses: QuickBirdEng/actions/setup-fastlane@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-
       - uses: QuickBirdEng/actions/flutter-build@main
         with:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           build-type: "ipa"
-          build-arguments: ${{ inputs.ios-build-arguments }}
+          build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
           working-directory: ${{ inputs.working-directory }}
 
   build-android:
@@ -124,9 +102,14 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
+      - uses: QuickBirdEng/actions/setup-android@main
         with:
-          working-directory: ${{ inputs.working-directory }}
+          key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
+          key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
+          qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
       - uses: QuickBirdEng/actions/flutter-build@main
         with:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
