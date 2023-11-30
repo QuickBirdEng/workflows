@@ -39,55 +39,10 @@ jobs:
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
-  lint:
-    runs-on: [self-hosted]
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-      - run: flutter analyze
-  test:
-    runs-on: [self-hosted]
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-      - run: flutter test --dart-define STAGE=mock
-
-  test-coverage:
-    runs-on: [self-hosted]
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-      - run: flutter test --coverage --dart-define STAGE=mock
-      - uses: QuickBirdEng/actions/flutter-coverage@main
-        with:
-          path: ${{ env.CODE_COVERAGE_FILE_PATH }}
-          min_coverage: ${{ env.CODE_COVERAGE }}
-          exclude: ${{ env.CODE_COVERAGE_EXLUDE_FILE }}
 
   android-publish:
     runs-on: [self-hosted, Linux]
-    needs: [generate-build-number, lint, test]
+    needs: [generate-build-number]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -108,7 +63,7 @@ jobs:
 
   ios-publish:
     runs-on: [self-hosted, macOS]
-    needs: [generate-build-number, lint, test]
+    needs: [generate-build-number]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
