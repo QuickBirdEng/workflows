@@ -1,0 +1,95 @@
+name: Flutter Manual Deploy Workflow
+env:
+  ENVIRONMENT_FILE: .env
+
+on:
+  workflow_call:
+    inputs:
+      ios-build-arguments:
+        description: "any extra arguments such as using sksl or passing a variable using --dart-define etc. for iOS build"
+        type: string
+        required: false
+      android-build-arguments:
+        description: "any extra arguments such as using sksl or passing a variable using --dart-define etc. for Android build"
+        type: string
+        required: false
+      publish-to-testflight:
+        description: "Should publish to Testflight?"
+        type: boolean
+        default: false
+      working-directory:
+        description: "the directory to run each job of the workflow in"
+        type: string
+        default: "."
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-build-number:
+    runs-on: [self-hosted]
+    outputs:
+      build-number: ${{ steps.build-number-generator.outputs.build-number }}
+    steps:
+      - name: Generate Build Number
+        id: build-number-generator
+        run: |
+          build_number=$(date +%s)
+          echo "build-number=$build_number" >> $GITHUB_OUTPUT
+          echo "Build Number: $build_number"
+
+  android-publish:
+    runs-on: [self-hosted, Linux]
+    needs: [generate-build-number]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/publish-android@main
+        with:
+          clean: false
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+          build-arguments: ${{ inputs.android-build-arguments }}
+          working-directory: ${{ inputs.working-directory }}
+          key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
+          key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
+          qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
+          upload-key: ${{ secrets.UPLOAD_KEY }}
+
+  ios-publish:
+    runs-on: [self-hosted, macOS]
+    needs: [generate-build-number]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/setup-ios@main
+      - uses: QuickBirdEng/actions/flutter-build@main
+        id: build
+        with:
+          build-type: ipa
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+          build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
+          clean: true
+          working-directory: ${{ inputs.working-directory }}
+      - uses: QuickBirdEng/actions/publish-ios@main
+        with:
+          apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          apple-auth-key-encoding: "base64"
+          upload-key: ${{ secrets.UPLOAD_KEY }}
+          publish-to-testflight: ${{ inputs.publish-to-testflight }}
+          match-password: ${{ secrets.MATCH_PASSWORD }}
+          match-repository: ${{ secrets.MATCH_REPO }}
+          match-apple-id: ${{ secrets.APPLE_ID }}
+          match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          match-keychain-password: ${{ secrets.FASTLANE_KEYCHAIN_PASSWORD }}
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+          slack-slug: ${{ secrets.SLACK_SLUG }}
+          working-directory: ${{ inputs.working-directory }}
