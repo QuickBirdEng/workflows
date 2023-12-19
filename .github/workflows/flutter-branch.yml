@@ -17,6 +17,10 @@ on:
         description: "the directory to run each job of the workflow in"
         type: string
         default: "."
+      use-mac-runners-for-test:
+        description: "shoudl use mac runners to run test"
+        type: boolean
+        default: false
   workflow_dispatch:
 
 concurrency:
@@ -49,7 +53,8 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
   test:
-    runs-on: [self-hosted]
+    runs-on:
+      ["${{ inputs.use-mac-runners-for-test && 'macOS' || 'self-hosted'  }}"]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -63,7 +68,8 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
 
   test-coverage:
-    runs-on: [self-hosted]
+    runs-on:
+      ["${{ inputs.use-mac-runners-for-test && 'macOS' || 'self-hosted'  }}"]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
