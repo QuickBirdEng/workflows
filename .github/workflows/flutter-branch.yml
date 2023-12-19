@@ -18,7 +18,7 @@ on:
         type: string
         default: "."
       use-mac-runners-for-test:
-        description: "shoudl use mac runners to run test"
+        description: "use mac runners to run test"
         type: boolean
         default: false
   workflow_dispatch:
