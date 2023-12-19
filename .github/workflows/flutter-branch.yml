@@ -54,7 +54,10 @@ jobs:
       - run: flutter analyze
   test:
     runs-on:
-      ["${{ inputs.use-mac-runners-for-test && 'macOS' || 'self-hosted'  }}"]
+      [
+        self-hosted,
+        "${{ inputs.use-mac-runners-for-test == 'true' && 'macOS' || '' }}",
+      ]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -69,7 +72,10 @@ jobs:
 
   test-coverage:
     runs-on:
-      ["${{ inputs.use-mac-runners-for-test && 'macOS' || 'self-hosted'  }}"]
+      [
+        self-hosted,
+        "${{ inputs.use-mac-runners-for-test == 'true' && 'macOS' }}",
+      ]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
