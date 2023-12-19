@@ -56,7 +56,7 @@ jobs:
     runs-on:
       [
         self-hosted,
-        "${{ inputs.use-mac-runners-for-test == 'true' && 'macOS' || '' }}",
+        "${{ inputs.use-mac-runners-for-test == 'true' && 'macOS' }}",
       ]
     defaults:
       run:
