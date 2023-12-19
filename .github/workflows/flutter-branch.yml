@@ -55,7 +55,7 @@ jobs:
   test:
     runs-on:
       [
-        "${{ inputs.use-mac-runners-for-test == 'true' && 'self-hosted, macOS' || 'self-hosted' }}",
+        "${{ inputs.use-mac-runners-for-test && 'self-hosted, macOS' || 'self-hosted' }}",
       ]
     defaults:
       run:
@@ -72,7 +72,7 @@ jobs:
   test-coverage:
     runs-on:
       [
-        "${{ inputs.use-mac-runners-for-test == 'true' && 'self-hosted, macOS' || 'self-hosted' }}",
+        "${{ inputs.use-mac-runners-for-test && 'self-hosted, macOS' || 'self-hosted' }}",
       ]
 
     defaults:
