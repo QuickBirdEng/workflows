@@ -53,10 +53,8 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
   test:
-    runs-on:
-      [
-        "${{ inputs.use-mac-runners-for-test && 'self-hosted, macOS' || 'self-hosted' }}",
-      ]
+    runs-on: ${{ inputs.use-mac-runners-for-test && '[self-hosted, macOS]' || '[self-hosted]' }},
+
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -70,11 +68,7 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
 
   test-coverage:
-    runs-on:
-      [
-        "${{ inputs.use-mac-runners-for-test && 'self-hosted, macOS' || 'self-hosted' }}",
-      ]
-
+    runs-on: ${{ inputs.use-mac-runners-for-test && '[self-hosted, macOS]' || '[self-hosted]' }},
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
