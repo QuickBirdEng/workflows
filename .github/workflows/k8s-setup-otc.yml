@@ -1,0 +1,78 @@
+name: K8s OTC Base Setup
+
+on:
+  workflow_call:
+    inputs:
+      deploy_ingress_controller:
+        description: Deploy Ingress Controller?"
+        type: boolean
+        required: true
+      deploy_cert_manager:
+        description: "Deploy Cert Manager?"
+        type: boolean
+        required: true
+      load_balancer_ip:
+        description: "IP Address for the load balancer"
+        type: string
+        required: true
+      load_balancer_id:
+        description: "OTC load balancer ID"
+        type: string
+        required: true
+      issuer_yaml:
+        description: "Yaml file describing cluster issuers"
+        type: string
+        required: true
+  workflow_dispatch:
+
+jobs:
+  deploy-ingress-controller:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie"]', github.triggering_actor) && inputs.deploy_ingress_controller
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - name: Helm Install Ingress Controller
+        if: ${{ github.event.inputs.deploy-ingress-controller == 'true' }}
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+          helm repo update
+
+          helm install ingress-nginx/ingress-nginx -n nginx-ingress-controller --create-namespace --generate-name --set controller.service.loadBalancerIP="${{ inputs.load_balancer_ip }}",controller.service.annotations."kubernetes\.io/elb\.class"=union,controller.service.annotations."kubernetes\.io/elb\.id"="${{ inputs.load_balancer_id }}"
+
+  deploy-cert-manager:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie"]', github.triggering_actor) && inputs.deploy_cert_manager && ${{ always() }}
+    needs: deploy-ingress-controller
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - name: Helm Install Cert Manager
+        if: ${{ github.event.inputs.deploy_cert_manager == 'true' }}
+        run: |
+          helm repo add jetpack https://charts.jetstack.io
+
+          helm repo update
+
+          helm install cert-manager jetpack/cert-manager --version 1.13.0 -n cert-manager --create-namespace --set installCRDs=true
+      - name: Helm Install Cluster Issuer
+        if: ${{ github.event.inputs.deploy_cert_manager == 'true' }}
+        run: |
+          kubectl create -f ${{ inputs.issuer_yaml }}
