@@ -81,6 +81,17 @@ jobs:
                 - create
                 - patch
                 - delete
+            - apiGroups: ["networking.k8s.io"]
+              resources:
+                - ingresses
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+                - create
+                - patch
+                - delete
           EOF
       - name: Create role binding
         run: |

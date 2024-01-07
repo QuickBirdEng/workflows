@@ -3,14 +3,6 @@ name: K8s OTC Base Setup
 on:
   workflow_call:
     inputs:
-      deploy_ingress_controller:
-        description: Deploy Ingress Controller?"
-        type: boolean
-        required: true
-      deploy_cert_manager:
-        description: "Deploy Cert Manager?"
-        type: boolean
-        required: true
       load_balancer_ip:
         description: "IP Address for the load balancer"
         type: string
@@ -23,12 +15,16 @@ on:
         description: "Yaml file describing cluster issuers"
         type: string
         required: true
+      storage_class_yaml:
+        description: "Yaml file describing storage class"
+        type: string
+        required: true
   workflow_dispatch:
 
 jobs:
   deploy-ingress-controller:
     runs-on: [self-hosted, docker]
-    if: contains('["acpoppe","KlausNie"]', github.triggering_actor) && inputs.deploy_ingress_controller
+    if: contains('["acpoppe","KlausNie"]', github.triggering_actor)
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v3
@@ -41,7 +37,6 @@ jobs:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
           context: ${{ secrets.KUBE_CONTEXT }}
       - name: Helm Install Ingress Controller
-        if: ${{ github.event.inputs.deploy-ingress-controller == 'true' }}
         run: |
           helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 
@@ -51,7 +46,7 @@ jobs:
 
   deploy-cert-manager:
     runs-on: [self-hosted, docker]
-    if: contains('["acpoppe","KlausNie"]', github.triggering_actor) && inputs.deploy_cert_manager && ${{ always() }}
+    if: contains('["acpoppe","KlausNie"]', github.triggering_actor)
     needs: deploy-ingress-controller
     steps:
       - uses: actions/checkout@v4
@@ -65,14 +60,15 @@ jobs:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
           context: ${{ secrets.KUBE_CONTEXT }}
       - name: Helm Install Cert Manager
-        if: ${{ github.event.inputs.deploy_cert_manager == 'true' }}
         run: |
           helm repo add jetpack https://charts.jetstack.io
 
           helm repo update
 
           helm install cert-manager jetpack/cert-manager --version 1.13.0 -n cert-manager --create-namespace --set installCRDs=true
-      - name: Helm Install Cluster Issuer
-        if: ${{ github.event.inputs.deploy_cert_manager == 'true' }}
+      - name: Apply Cluster Issuers
         run: |
-          kubectl create -f ${{ inputs.issuer_yaml }}
+          kubectl apply -f ${{ inputs.issuer_yaml }}
+      - name: Apply Storage Classes
+        run: |
+          kubectl apply -f ${{ inputs.storage_class_yaml }}
