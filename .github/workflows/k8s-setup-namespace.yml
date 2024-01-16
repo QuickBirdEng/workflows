@@ -1,0 +1,113 @@
+name: K8s App Setup
+
+on:
+  workflow_call:
+    inputs:
+      namespace:
+        description: "Namespace to create and add a service account to"
+        type: string
+        required: true
+  workflow_dispatch:
+
+jobs:
+  k8s-setup-app:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie"]', github.triggering_actor)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - name: Create namespace
+        run: |
+          kubectl create namespace ${{ inputs.namespace }}
+      - name: Create service account
+        run: |
+          kubectl create serviceaccount github-actions-${{ inputs.namespace }} -n ${{ inputs.namespace }}
+      - name: Create service account token
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: sa-${{ inputs.namespace }}-token
+            namespace: ${{ inputs.namespace }}
+            annotations:
+              kubernetes.io/service-account.name: github-actions-${{ inputs.namespace }}
+          type: kubernetes.io/service-account-token
+          EOF
+      - name: Create role
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            name: github-actions-${{ inputs.namespace }}-role
+            namespace: ${{ inputs.namespace }}
+          rules:
+            - apiGroups: [""]
+              resources:
+                - configmaps
+                - persistentvolumeclaims
+                - pods
+                - pods/exec
+                - pods/log
+                - pods/portforward
+                - secrets
+                - services
+              verbs:
+                - get
+                - watch
+                - list
+                - update
+                - create
+                - patch
+                - delete
+            - apiGroups: ["apps"]
+              resources:
+                - deployments
+                - statefulsets
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+                - create
+                - patch
+                - delete
+            - apiGroups: ["networking.k8s.io"]
+              resources:
+                - ingresses
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+                - create
+                - patch
+                - delete
+          EOF
+      - name: Create role binding
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: github-actions-${{ inputs.namespace }}-role-binding
+            namespace: ${{ inputs.namespace }}
+          subjects:
+          - kind: ServiceAccount
+            name: github-actions-${{ inputs.namespace }}
+            namespace: ${{ inputs.namespace }}
+          roleRef:
+            kind: Role
+            name: github-actions-${{ inputs.namespace }}-role
+            apiGroup: rbac.authorization.k8s.io
+          EOF
+
