@@ -12,7 +12,7 @@ on:
 jobs:
   k8s-setup-app:
     runs-on: [self-hosted, docker]
-    if: contains('["acpoppe","KlausNie"]', github.triggering_actor)
+    if: contains('["acpoppe","KlausNie","kupeliorhun"]', github.triggering_actor)
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v3
