@@ -125,7 +125,7 @@ jobs:
           build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
           clean: true
           working-directory: ${{ inputs.working-directory }}
-      - uses: QuickBirdEng/actions/publish-ios@main
+      - uses: QuickBirdEng/actions/publish-ios@sentry
         with:
           apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
@@ -141,6 +141,10 @@ jobs:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           slack-slug: ${{ secrets.SLACK_SLUG }}
           working-directory: ${{ inputs.working-directory }}
+          sentry-url: ${{ secrets.SENTRY_URL }}
+          sentry-project: ${{ secrets.SENTRY_PROJECT }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          sentry-organization: ${{ secrets.SENTRY_ORG }}
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
         with:
