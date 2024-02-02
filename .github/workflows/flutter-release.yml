@@ -144,7 +144,7 @@ jobs:
       - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
         with:
           url: ${{ secrets.SENTRY_URL }}
-          organiation: ${{ secrets.SENTRY_ORG }}
+          organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           xc-archive-path: ${{ steps.build.outputs.artifact-path }}
