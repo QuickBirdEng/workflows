@@ -141,6 +141,17 @@ jobs:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           slack-slug: ${{ secrets.SLACK_SLUG }}
           working-directory: ${{ inputs.working-directory }}
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+        env:
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        if: ${{ env.SENTRY_PROJECT != '' }}
+        with:
+          url: ${{ secrets.SENTRY_URL }}
+          organization: ${{ secrets.SENTRY_ORG }}
+          project: ${{ secrets.SENTRY_PROJECT }}
+          auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          xc-archive-path: ${{ steps.build.outputs.artifact-path }}
+        continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
         with:
