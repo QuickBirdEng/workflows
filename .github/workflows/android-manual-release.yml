@@ -7,6 +7,10 @@ on:
         description: 'Whether to use LFS for the artifacts'
         type: boolean
         default: false
+      ndk:
+        description: 'Should use NDK for the build'
+        type: boolean
+        default: false
 
 env:
   ENVIRONMENT_FILE: .env
@@ -35,6 +39,10 @@ jobs:
       - uses: actions/checkout@v3
         with:
           lfs: ${{ inputs.lfs }}
+      - uses: nttld/setup-ndk@v1
+        if: ${{ inputs.ndk == true }}
+        with:
+          ndk-version: r25c
       - run: echo "BuildForRelease=true" >> $GITHUB_ENV
       - uses: QuickBirdEng/actions/setup-version@main
         with:
@@ -67,6 +75,10 @@ jobs:
       - uses: actions/checkout@v3
         with:
           lfs: ${{ inputs.lfs }}
+      - uses: nttld/setup-ndk@v1
+        if: ${{ inputs.ndk == true }}
+        with:
+          ndk-version: r25c
       - run: echo "BuildForRelease=true" >> $GITHUB_ENV
       - uses: QuickBirdEng/actions/setup-version@main
         with:
