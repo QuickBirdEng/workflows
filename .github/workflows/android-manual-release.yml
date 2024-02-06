@@ -2,6 +2,11 @@ name: Manual Release Workflow
 
 on:
   workflow_call:
+    inputs:
+      lfs:
+        description: 'Whether to use LFS for the artifacts'
+        type: boolean
+        default: false
   workflow_dispatch:
 
 env:
@@ -29,6 +34,8 @@ jobs:
     needs: [generate-build-number]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.lfs }}
       - run: echo "BuildForRelease=true" >> $GITHUB_ENV
       - uses: QuickBirdEng/actions/setup-version@main
         with:
@@ -59,6 +66,8 @@ jobs:
     needs: [generate-build-number]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.lfs }}
       - run: echo "BuildForRelease=true" >> $GITHUB_ENV
       - uses: QuickBirdEng/actions/setup-version@main
         with:
