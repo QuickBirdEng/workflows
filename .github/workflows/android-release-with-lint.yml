@@ -1,8 +1,12 @@
 name: Release Workflow
 
 on:
-  workflow_call:  
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      lfs:
+        description: 'Whether to use LFS for the artifacts'
+        type: boolean
+        default: false
 
 env:
   ENVIRONMENT_FILE: .env
@@ -19,7 +23,7 @@ jobs:
     steps:
       - name: Generate Build Number
         id: build-number-generator
-        run: | 
+        run: |
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
@@ -29,6 +33,7 @@ jobs:
     uses: ./.github/workflows/android-common-with-lint.yml
     with:
       build-number: ${{ needs.generate-build-number.outputs.build-number }}
+      lfs: ${{ inputs.lfs }}
     secrets: inherit
 
   android-bundle:
@@ -36,6 +41,8 @@ jobs:
       needs: [generate-build-number, branch]
       steps:
         - uses: actions/checkout@v3
+          with:
+            lfs: ${{ inputs.lfs }}
         - run: echo "BuildForRelease=true" >> $GITHUB_ENV
         - uses: QuickBirdEng/actions/setup-version@main
           with:

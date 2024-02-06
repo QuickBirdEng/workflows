@@ -7,7 +7,6 @@ on:
         description: 'Whether to use LFS for the artifacts'
         type: boolean
         default: false
-  workflow_dispatch:
 
 env:
   ENVIRONMENT_FILE: .env
