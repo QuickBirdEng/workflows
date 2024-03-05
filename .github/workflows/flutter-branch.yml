@@ -68,6 +68,9 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     steps:
+      - name: Conditional Check (to skip job)
+        if: env.CODE_COVERAGE == ''
+        run: echo "Skipping Job" && exit 0
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
