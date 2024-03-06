@@ -125,7 +125,7 @@ jobs:
           build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
           clean: true
           working-directory: ${{ inputs.working-directory }}
-      - uses: QuickBirdEng/actions/publish-ios@main
+      - uses: QuickBirdEng/actions/publish-ios@fastlane-release-notes
         with:
           apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
