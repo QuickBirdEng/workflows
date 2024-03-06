@@ -141,6 +141,7 @@ jobs:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           slack-slug: ${{ secrets.SLACK_SLUG }}
           working-directory: ${{ inputs.working-directory }}
+          release-notes: ${{ inputs.ios-build-arguments }}
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
         with:

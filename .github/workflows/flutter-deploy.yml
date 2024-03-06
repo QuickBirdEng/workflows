@@ -93,3 +93,4 @@ jobs:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           slack-slug: ${{ secrets.SLACK_SLUG }}
           working-directory: ${{ inputs.working-directory }}
+          release-notes: ${{ inputs.ios-build-arguments }}
