@@ -5,7 +5,7 @@ env:
 on:
   workflow_call:
     inputs:
-      platform: 
+      platform:
         description: 'flutter or ios?'
         type: string
         default: 'ios'
@@ -28,9 +28,9 @@ concurrency:
 
 jobs:
   renew:
-    runs-on: [self-hosted, macOS]
+    runs-on: macos-latest
     defaults:
-      run: 
+      run:
         working-directory: ${{ inputs.working-directory }}
     if: contains('["nasirky","acpoppe","grafele"]', github.triggering_actor)
     steps:
@@ -67,7 +67,7 @@ jobs:
           git remote add match ${{ secrets.MATCH_REPO }}
           git add . && git commit -m "Remove ${{ inputs.certificate-type }} profiles and (optionally) certificates for ${{ env.BUNDLE_ID }}" && git push match || true
       - uses: QuickBirdEng/actions/setup-fastlane@main
-        with: 
+        with:
           platform: ${{ inputs.platform }}
           working-directory: ${{ inputs.working-directory }}
       - uses: QuickBirdEng/actions/setup-fastlane-environment@main
@@ -84,7 +84,7 @@ jobs:
         shell: bash -l {0}
         run: |
             [[ "${{ inputs.platform }}" == "flutter" ]] && cd ios
-            
+
             if [[ '${{ inputs.certificate-type }}' == 'distribution' || '${{ inputs.certificate-type }}' == 'both' ]]; then
               fastlane match_for_signing type:appstore refresh_certificates:true
               fastlane match_for_signing type:adhoc refresh_certificates:true

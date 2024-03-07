@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build-or-test:
-    runs-on: [self-hosted, MacOS]
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}

@@ -109,7 +109,7 @@ jobs:
 #          path: mobsf-report-apk.json
 
 #  mobsf_scan_ios:
-#    runs-on: [ self-hosted, ios ]
+#    runs-on: [ ios ]
 #    steps:
 #      - name: Checkout Repo
 #        uses: actions/checkout@master

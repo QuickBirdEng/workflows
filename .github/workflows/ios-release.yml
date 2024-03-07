@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   check_version:
-    runs-on: [self-hosted, MacOS]
+    runs-on: macos-latest
     if: inputs.run-check-version-job == true
     continue-on-error: true
     steps:
@@ -34,11 +34,11 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
       - uses: QuickBirdEng/actions/setup-ios@main
       - uses: QuickBirdEng/actions/setup-fastlane@main
-        with: 
+        with:
           working-directory: ${{ inputs.working-directory }}
       - shell: bash -l {0}
         run: gem install bundler && bundle update
-        
+
       - name: Setup API Key (if secret is set)
         shell: bash
         run: |
@@ -60,7 +60,7 @@ jobs:
       fastlane-action-name: ${{ inputs.fastlane-action-name }}
     secrets: inherit
   publish:
-    runs-on: [self-hosted, MacOS]
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
