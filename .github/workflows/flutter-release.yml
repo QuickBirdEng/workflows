@@ -50,21 +50,11 @@ jobs:
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
-      - name: Generate Name Suffix
-        id: name-suffix-generator
-        shell: bash
-        run: |
-          stage=$(echo "${{ inputs.ios-build-arguments}}" | cut -d= -f2 | awk '{print $1}')
-          echo "Stage: $stage"
-
-          name_suffix="-ios"
-
-          if [[ -n $stage ]]; then
-            name_suffix="${name_suffix}-$stage"
-          fi
-
-          echo "name-suffix=$name_suffix" >> $GITHUB_OUTPUT
-          echo "Artifact Name Suffix: $name_suffix"
+      - id: name-suffix-generator
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@name-suffix
+        with:
+          platform: ios
+          build-arguments: ${{ inputs.android-build-arguments }}
 
   android-name-suffix-generation:
     runs-on: [self-hosted]
@@ -72,21 +62,11 @@ jobs:
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
-      - name: Generate Name Suffix
-        id: name-suffix-generator
-        shell: bash
-        run: |
-          stage=$(echo "${{ inputs.android-build-arguments}}" | cut -d= -f2 | awk '{print $1}')
-          echo "Stage: $stage"
-
-          name_suffix="-android"
-
-          if [[ -n $stage ]]; then
-            name_suffix="${name_suffix}-$stage"
-          fi
-
-          echo "name-suffix=$name_suffix" >> $GITHUB_OUTPUT
-          echo -e "Artifact Name Suffix: $name_suffix"
+      - id: name-suffix-generator
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@name-suffix
+        with:
+          platform: android
+          build-arguments: ${{ inputs.android-build-arguments }}
 
   lint:
     runs-on: [self-hosted]
