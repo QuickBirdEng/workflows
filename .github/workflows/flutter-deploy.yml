@@ -45,6 +45,46 @@ jobs:
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
 
+  ios-name-suffix-generation:
+    runs-on: [self-hosted]
+    outputs:
+      name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
+    steps:
+      - name: Generate Name Suffix
+        id: name-suffix-generator
+        shell: bash
+        run: |
+          stage=$(echo "${{ inputs.ios-build-arguments}}" | cut -d= -f2 | awk '{print $1}')
+
+          if [[ $stage != ""  ]]; then
+            echo "name-suffix=$stage-" >> $GITHUB_OUTPUT
+          else
+            echo "name-suffix=" >> $GITHUB_OUTPUT
+          fi
+
+          echo -e "\033[31m Stage: $stage\033[0m"
+          echo -e "\033[31m Stage: ${name-suffix}\033[0m"
+
+  android-name-suffix-generation:
+    runs-on: [self-hosted]
+    outputs:
+      name-suffix: ${{ steps.name-suffix-generator.outputs.ios-name-suffix }}
+    steps:
+      - name: Generate Name Suffix
+        id: name-suffix-generator
+        shell: bash
+        run: |
+          stage=$(echo "${{ inputs.ios-build-arguments}}" | cut -d= -f2 | awk '{print $1}')
+
+          if [[ '$stage' != ''  ]]; then
+            echo "name-suffix=$stage-" >> $GITHUB_OUTPUT
+          else
+            echo "name-suffix=" >> $GITHUB_OUTPUT
+          fi
+
+          echo -e "\033[31m Stage: $stage\033[0m"
+          echo -e "\033[31m Stage: ${name-suffix}\033[0m"
+
   android-publish:
     runs-on: [self-hosted, Linux]
     needs: [generate-build-number]

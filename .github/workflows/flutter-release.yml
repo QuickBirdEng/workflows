@@ -21,10 +21,6 @@ on:
         description: "the directory to run each job of the workflow in"
         type: string
         default: "."
-      artifact-name-suffix:
-        description: "the suffix to add to the artifact name"
-        type: string
-        default: ""
       submit-ios-build-for-review:
         description: 'Submit TestFlight Build for Review'
         type: boolean
@@ -58,11 +54,15 @@ jobs:
         id: name-suffix-generator
         shell: bash
         run: |
-          if [[ '${{ inputs.artifact-name-suffix }}' != '' ]]; then
-            echo "name-suffix=${{ inputs.artifact-name-suffix }}-" >> $GITHUB_OUTPUT
+          stage=$(echo "${{ inputs.ios-build-arguments}}" | cut -d= -f2 | awk '{print $1}')
+
+          if [[ '$stage' != ''  ]]; then
+            echo "name-suffix=$stage-" >> $GITHUB_OUTPUT
           else
             echo "name-suffix=" >> $GITHUB_OUTPUT
           fi
+
+          echo -e "\033[31m Stage: $stage\033[0m"
 
   lint:
     runs-on: [self-hosted]
