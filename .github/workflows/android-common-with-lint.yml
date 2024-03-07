@@ -9,6 +9,11 @@ on:
         description: 'Build Number'
         type: string
         required: false
+      lfs:
+        description: 'Whether to use LFS for the artifacts'
+        type: boolean
+        default: false
+
   workflow_dispatch:
 
 concurrency:
@@ -20,18 +25,24 @@ jobs:
     runs-on: [self-hosted, Linux]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.lfs }}
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - run: ./gradlew quickLint
   unitTests:
     runs-on: [self-hosted, Linux]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.lfs }}
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - run: ./gradlew test
   androidTests:
     runs-on: [self-hosted, Linux, android]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.lfs }}
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - run: ./gradlew cAT --stacktrace
   android-publish:
@@ -39,9 +50,11 @@ jobs:
       needs: [lint, unitTests, androidTests]
       steps:
         - uses: actions/checkout@v3
+          with:
+            lfs: ${{ inputs.lfs }}
         - run: echo "BuildForRelease=true" >> $GITHUB_ENV
         - uses: QuickBirdEng/actions/setup-version@main
-          with: 
+          with:
             build-number: ${{ inputs.build-number }}
         - uses: QuickBirdEng/actions/setup-android@main
           with:

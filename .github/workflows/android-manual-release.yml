@@ -2,7 +2,15 @@ name: Manual Release Workflow
 
 on:
   workflow_call:
-  workflow_dispatch:
+    inputs:
+      lfs:
+        description: 'Whether to use LFS for the artifacts'
+        type: boolean
+        default: false
+      ndk:
+        description: 'Should use NDK for the build'
+        type: boolean
+        default: false
 
 env:
   ENVIRONMENT_FILE: .env
@@ -24,17 +32,36 @@ jobs:
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
 
-  branch:
-    needs: [generate-build-number]
-    uses: QuickBirdEng/workflows/.github/workflows/android-common.yml@main
-    with:
-      build-number: ${{ needs.generate-build-number.outputs.build-number }}
-    secrets: inherit
-
-  publish-apps-qb:
+  android-publish:
     runs-on: [self-hosted, Linux]
-    needs: [branch]
+    needs: [generate-build-number]
     steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.lfs }}
+      - uses: nttld/setup-ndk@v1
+        if: ${{ inputs.ndk == true }}
+        with:
+          ndk-version: r25c
+      - run: echo "BuildForRelease=true" >> $GITHUB_ENV
+      - uses: QuickBirdEng/actions/setup-version@main
+        with:
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+      - uses: QuickBirdEng/actions/setup-android@main
+        with:
+          key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
+          key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+      - name: Setup API Key (if secret is set)
+        shell: bash
+        run: |
+          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
+            echo "RAW_API_KEY=${{ secrets.RAW_API_KEY }}" >> .env.credentials
+          fi
+      - name: Generate APK
+        shell: bash
+        run: ./gradlew assembleRelease
       - name: "Publishing to apps.quickbirdstudios.com"
         uses: QuickBirdEng/actions/qb-publish@main
         with:
@@ -43,9 +70,15 @@ jobs:
 
   android-bundle:
     runs-on: [self-hosted, Linux]
-    needs: [generate-build-number, branch]
+    needs: [generate-build-number]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.lfs }}
+      - uses: nttld/setup-ndk@v1
+        if: ${{ inputs.ndk == true }}
+        with:
+          ndk-version: r25c
       - run: echo "BuildForRelease=true" >> $GITHUB_ENV
       - uses: QuickBirdEng/actions/setup-version@main
         with:
