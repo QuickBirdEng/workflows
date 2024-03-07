@@ -51,7 +51,7 @@ jobs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
       - id: name-suffix-generator
-        uses: QuickBirdEng/actions/flutter-name-suffix-generator@name-suffix
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@main
         with:
           platform: ios
           build-arguments: ${{ inputs.android-build-arguments }}
@@ -63,7 +63,7 @@ jobs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
       - id: name-suffix-generator
-        uses: QuickBirdEng/actions/flutter-name-suffix-generator@name-suffix
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@main
         with:
           platform: android
           build-arguments: ${{ inputs.android-build-arguments }}
