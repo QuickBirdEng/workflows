@@ -21,10 +21,6 @@ on:
         description: "the directory to run each job of the workflow in"
         type: string
         default: "."
-      artifact-name-suffix:
-        description: "the suffix to add to the artifact name"
-        type: string
-        default: ""
       submit-ios-build-for-review:
         description: 'Submit TestFlight Build for Review'
         type: boolean
@@ -49,20 +45,28 @@ jobs:
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
 
-  name-suffix-generation:
+  ios-name-suffix-generation:
     runs-on: [self-hosted]
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
-      - name: Generate Name Suffix
-        id: name-suffix-generator
-        shell: bash
-        run: |
-          if [[ '${{ inputs.artifact-name-suffix }}' != '' ]]; then
-            echo "name-suffix=${{ inputs.artifact-name-suffix }}-" >> $GITHUB_OUTPUT
-          else
-            echo "name-suffix=" >> $GITHUB_OUTPUT
-          fi
+      - id: name-suffix-generator
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@main
+        with:
+          platform: ios
+          build-arguments: ${{ inputs.android-build-arguments }}
+
+  android-name-suffix-generation:
+    runs-on: [self-hosted]
+    if: ${{ github.ref_type == 'tag' }}
+    outputs:
+      name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
+    steps:
+      - id: name-suffix-generator
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@main
+        with:
+          platform: android
+          build-arguments: ${{ inputs.android-build-arguments }}
 
   lint:
     runs-on: [self-hosted]
@@ -115,7 +119,7 @@ jobs:
 
   ios-publish:
     runs-on: [self-hosted, macOS]
-    needs: [generate-build-number, lint, test, name-suffix-generation]
+    needs: [generate-build-number, lint, test, ios-name-suffix-generation]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -153,12 +157,12 @@ jobs:
           access-key: ${{ secrets.DO_ACCESS_KEY }}
           secret-key: ${{ secrets.DO_SECRET_KEY }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          name-suffix: ${{ needs.name-suffix-generation.outputs.name-suffix }}ios
+          name-suffix: ${{ needs.ios-name-suffix-generation.outputs.name-suffix }}
           artifact-path: ${{ steps.build.outputs.artifact-path }}
 
   android-bundle:
     runs-on: [self-hosted, Linux]
-    needs: [generate-build-number, lint, test, name-suffix-generation]
+    needs: [generate-build-number, lint, test, android-name-suffix-generation]
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
@@ -186,5 +190,5 @@ jobs:
           access-key: ${{ secrets.DO_ACCESS_KEY }}
           secret-key: ${{ secrets.DO_SECRET_KEY }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          name-suffix: ${{ needs.name-suffix-generation.outputs.name-suffix }}android
+          name-suffix: ${{ needs.android-name-suffix-generation.outputs.name-suffix }}
           artifact-path: ${{ steps.flutter-build.outputs.artifact-path }}
