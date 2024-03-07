@@ -25,6 +25,10 @@ on:
         description: "the suffix to add to the artifact name"
         type: string
         default: ""
+      submit-ios-build-for-review:
+        description: 'Submit TestFlight Build for Review'
+        type: boolean
+        default: false
 
   workflow_dispatch:
 
@@ -141,6 +145,8 @@ jobs:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           slack-slug: ${{ secrets.SLACK_SLUG }}
           working-directory: ${{ inputs.working-directory }}
+          release-notes: ${{ inputs.ios-build-arguments }}
+          submit-for-review: ${{ inputs.submit-ios-build-for-review }}
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
         with:
