@@ -25,6 +25,10 @@ on:
         description: 'Submit TestFlight Build for Review'
         type: boolean
         default: false
+      artifact-name-suffix:
+        description: "the suffix to add to the artifact name (Not used but kept for backward compatibility)"
+        type: string
+        default: ""
 
   workflow_dispatch:
 
