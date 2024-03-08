@@ -87,7 +87,7 @@ jobs:
       - run: flutter analyze
 
   test:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, Linux]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
