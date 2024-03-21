@@ -28,7 +28,7 @@ jobs:
             echo "RAW_API_KEY=${{ secrets.RAW_API_KEY }}" >> .env.credentials
           fi
       - run: ./gradlew test
-  android-publish:
+  android-build:
       runs-on: [self-hosted, Linux]
       needs: [unitTests]
       steps:

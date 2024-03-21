@@ -34,21 +34,21 @@ jobs:
       - uses: actions/checkout@v3
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - run: ./gradlew cAT --stacktrace
-  android-publish:
-      runs-on: [self-hosted, Linux]
-      needs: [lint, unitTests, androidTests]
-      steps:
-        - uses: actions/checkout@v3
-        - run: echo "BuildForRelease=true" >> $GITHUB_ENV
-        - uses: QuickBirdEng/actions/setup-version@main
-          with: 
-            build-number: ${{ inputs.build-number }}
-        - uses: QuickBirdEng/actions/setup-android@main
-          with:
-            key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
-            key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-            signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
-            signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
-        - name: Generate APK
-          shell: bash
-          run: ./gradlew assembleRelease
+  android-build:
+    runs-on: [self-hosted, Linux]
+    needs: [lint, unitTests, androidTests]
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo "BuildForRelease=true" >> $GITHUB_ENV
+      - uses: QuickBirdEng/actions/setup-version@main
+        with:
+          build-number: ${{ inputs.build-number }}
+      - uses: QuickBirdEng/actions/setup-android@main
+        with:
+          key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
+          key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+      - name: Generate APK
+        shell: bash
+        run: ./gradlew assembleRelease
