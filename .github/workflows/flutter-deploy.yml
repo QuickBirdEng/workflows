@@ -44,6 +44,28 @@ jobs:
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
+  ios-name-suffix-generation:
+    runs-on: [self-hosted]
+    outputs:
+      name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
+    steps:
+      - id: name-suffix-generator
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@main
+        with:
+          platform: ios
+          build-arguments: ${{ inputs.ios-build-arguments }}
+
+  android-name-suffix-generation:
+    runs-on: [self-hosted]
+    outputs:
+      name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
+    if: contains(inputs.android-build-arguments, 'PRODUCTION')
+    steps:
+      - id: name-suffix-generator
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@main
+        with:
+          platform: android
+          build-arguments: ${{ inputs.android-build-arguments }}
 
   android-publish:
     runs-on: [self-hosted, Linux]
@@ -68,7 +90,7 @@ jobs:
 
   ios-publish:
     runs-on: [self-hosted, macOS]
-    needs: [generate-build-number]
+    needs: [generate-build-number, ios-name-suffix-generation]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -111,3 +133,44 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           xc-archive-path: ${{ steps.build.outputs.artifact-path }}
         continue-on-error: true
+      - name: Compress & Upload Artifact to QB Spaces
+        if: contains(inputs.android-build-arguments, 'PRODUCTION')
+        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        with:
+          access-key: ${{ secrets.DO_ACCESS_KEY }}
+          secret-key: ${{ secrets.DO_SECRET_KEY }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          name-suffix: ${{ needs.ios-name-suffix-generation.outputs.name-suffix }}
+          artifact-path: ${{ steps.build.outputs.artifact-path }}
+
+  android-bundle:
+    runs-on: [self-hosted, Linux]
+    needs: [generate-build-number, android-name-suffix-generation]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/setup-android@main
+        with:
+          key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
+          key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          signing-key-alias: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
+          qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
+      - uses: QuickBirdEng/actions/flutter-build@main
+        id: flutter-build
+        with:
+          clean: true
+          build-type: appbundle
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+          build-arguments: ${{ inputs.android-build-arguments }}
+          working-directory: ${{ inputs.working-directory }}
+      - name: Compress & Upload Artifact to QB Spaces
+        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        with:
+          access-key: ${{ secrets.DO_ACCESS_KEY }}
+          secret-key: ${{ secrets.DO_SECRET_KEY }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          name-suffix: ${{ needs.android-name-suffix-generation.outputs.name-suffix }}
+          artifact-path: ${{ steps.flutter-build.outputs.artifact-path }}
