@@ -9,6 +9,10 @@ on:
         description: 'Build Number'
         type: string
         required: false
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
   workflow_dispatch:
 
 concurrency:
@@ -20,18 +24,24 @@ jobs:
     runs-on: [self-hosted, Linux]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - run: ./gradlew quickLint
   unitTests:
     runs-on: [self-hosted, Linux]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - run: ./gradlew test
   androidTests:
     runs-on: [self-hosted, Linux, android]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - run: ./gradlew cAT --stacktrace
   android-build:
@@ -39,6 +49,8 @@ jobs:
     needs: [lint, unitTests, androidTests]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.git-lfs }}
       - run: echo "BuildForRelease=true" >> $GITHUB_ENV
       - uses: QuickBirdEng/actions/setup-version@main
         with:

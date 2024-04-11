@@ -29,7 +29,10 @@ on:
         description: "the suffix to add to the artifact name (Not used but kept for backward compatibility)"
         type: string
         default: ""
-
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
   workflow_dispatch:
 
 concurrency:
@@ -81,6 +84,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           working-directory: ${{ inputs.working-directory }}
@@ -95,6 +99,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           working-directory: ${{ inputs.working-directory }}
@@ -107,6 +112,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/publish-android@main
         with:
           clean: true
@@ -128,6 +134,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-ios@main
       - uses: QuickBirdEng/actions/flutter-build@main
         id: build
@@ -183,6 +190,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-android@main
         with:
           key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}

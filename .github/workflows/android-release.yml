@@ -2,6 +2,11 @@ name: Release Workflow
 
 on:
   workflow_call:
+    inputs:
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
   workflow_dispatch:
 
 env:
@@ -36,6 +41,8 @@ jobs:
     needs: [generate-build-number, branch]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.git-lfs }}
       - run: echo "BuildForRelease=true" >> $GITHUB_ENV
       - uses: QuickBirdEng/actions/setup-version@main
         with:
