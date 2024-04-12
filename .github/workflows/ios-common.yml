@@ -14,7 +14,10 @@ on:
         type: string
         default: '.'
         required: false
-
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
   workflow_dispatch:
 
 concurrency:
@@ -37,6 +40,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-ios@main
       - uses: QuickBirdEng/actions/setup-fastlane@main
         with:

@@ -9,6 +9,10 @@ on:
         description: 'Build Number'
         type: string
         required: false
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
   workflow_dispatch:
 
 concurrency:
@@ -20,6 +24,8 @@ jobs:
     runs-on: [self-hosted, Linux]
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - name: Setup API Key (if secret is set)
         shell: bash
@@ -33,6 +39,8 @@ jobs:
       needs: [unitTests]
       steps:
         - uses: actions/checkout@v3
+          with:
+            lfs: ${{ inputs.git-lfs }}
         - run: echo "BuildForRelease=true" >> $GITHUB_ENV
         - uses: QuickBirdEng/actions/setup-version@main
           with:

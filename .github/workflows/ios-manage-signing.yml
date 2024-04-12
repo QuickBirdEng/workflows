@@ -21,6 +21,10 @@ on:
         description: 'Provide working directory (if you are not using default directory structure)'
         type: string
         default: '.'
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -37,6 +41,7 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-environment@main
       - run: git clone -b main --single-branch ${{ secrets.MATCH_REPO }}
       - name: Remove Certificates
