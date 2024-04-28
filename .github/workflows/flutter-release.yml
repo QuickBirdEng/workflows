@@ -33,6 +33,10 @@ on:
         description: "Checkout the project with git lfs"
         type: boolean
         default: false
+      obfuscate:
+        description: "Obfuscate dart code"
+        type: boolean
+        default: false
   workflow_dispatch:
 
 concurrency:
@@ -113,7 +117,8 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/publish-android@main
+      # TODO(rinzin): Change to main after action is merged
+      - uses: QuickBirdEng/actions/publish-android@feature/dart-obfusication
         with:
           clean: true
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
@@ -126,6 +131,11 @@ jobs:
           qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
           upload-key: ${{ secrets.UPLOAD_KEY }}
+          obfuscate: ${{ inputs.obfuscate }}
+          sentry-url: ${{ secrets.SENTRY_URL }}
+          sentry-org: ${{ secrets.SENTRY_ORG }}
+          sentry-project: ${{ secrets.SENTRY_PROJECT }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}  
 
   ios-publish:
     runs-on: [self-hosted, macOS]
@@ -136,7 +146,8 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/flutter-build@main
+      # TODO(rinzin): Change to main after action is merged
+      - uses: QuickBirdEng/actions/flutter-build@feature/dart-obfusication
         id: build
         with:
           build-type: ipa
@@ -144,6 +155,11 @@ jobs:
           build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
           clean: true
           working-directory: ${{ inputs.working-directory }}
+          obfuscate: ${{ inputs.obfuscate }} 
+          sentry-url: ${{ secrets.SENTRY_URL }}
+          sentry-org: ${{ secrets.SENTRY_ORG }}
+          sentry-project: ${{ secrets.SENTRY_PROJECT }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}  
       - uses: QuickBirdEng/actions/publish-ios@main
         with:
           apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
