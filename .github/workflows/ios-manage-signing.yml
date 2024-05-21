@@ -91,9 +91,9 @@ jobs:
             [[ "${{ inputs.platform }}" == "flutter" ]] && cd ios
 
             if [[ '${{ inputs.certificate-type }}' == 'distribution' || '${{ inputs.certificate-type }}' == 'both' ]]; then
-              fastlane match_for_signing type:appstore refresh_certificates:true
-              fastlane match_for_signing type:adhoc refresh_certificates:true
+              bundle exec fastlane match_for_signing type:appstore refresh_certificates:true
+              bundle exec fastlane match_for_signing type:adhoc refresh_certificates:true
             fi
             if [[ '${{ inputs.certificate-type }}' == 'development' || '${{ inputs.certificate-type }}' == 'both' ]]; then
-              fastlane match_for_signing type:development refresh_certificates:true
+              bundle exec fastlane match_for_signing type:development refresh_certificates:true
             fi
