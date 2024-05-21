@@ -29,10 +29,6 @@ on:
         description: "Checkout the project with git lfs"
         type: boolean
         default: false
-      obfuscate:
-        description: "Obfuscate dart code"
-        type: boolean
-        default: false
   workflow_dispatch:
 
 concurrency:
@@ -95,7 +91,7 @@ jobs:
           qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
           upload-key: ${{ secrets.UPLOAD_KEY }}
-      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@obfuscation
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -104,6 +100,7 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
         continue-on-error: true
 
   ios-publish:
@@ -115,7 +112,7 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/flutter-build@obfuscation
+      - uses: QuickBirdEng/actions/flutter-build@main
         id: build
         with:
           build-type: ipa
@@ -123,7 +120,6 @@ jobs:
           build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
           clean: true
           working-directory: ${{ inputs.working-directory }}
-          obfuscate: ${{ inputs.obfuscate }}
       - uses: QuickBirdEng/actions/publish-ios@main
         with:
           apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
@@ -142,7 +138,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           release-notes: ${{ inputs.ios-build-arguments }}
           submit-for-review: ${{ inputs.submit-ios-build-for-review }}
-      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@obfuscation
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -151,7 +147,7 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          xc-archive-path: ${{ steps.build.outputs.artifact-path }}
+          dsyms-path: ${{ steps.build.outputs.artifact-path }}/dSYMs
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         if: contains(inputs.android-build-arguments, 'PRODUCTION')
