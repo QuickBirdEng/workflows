@@ -91,6 +91,17 @@ jobs:
           qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
           upload-key: ${{ secrets.UPLOAD_KEY }}
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+        env:
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        if: ${{ env.SENTRY_PROJECT != '' }}
+        with:
+          url: ${{ secrets.SENTRY_URL }}
+          organization: ${{ secrets.SENTRY_ORG }}
+          project: ${{ secrets.SENTRY_PROJECT }}
+          auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
+        continue-on-error: true
 
   ios-publish:
     runs-on: [self-hosted, macOS]
@@ -136,7 +147,7 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          xc-archive-path: ${{ steps.build.outputs.artifact-path }}
+          dsyms-path: ${{ steps.build.outputs.artifact-path }}/dSYMs
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         if: contains(inputs.android-build-arguments, 'PRODUCTION')
