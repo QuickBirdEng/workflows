@@ -103,7 +103,7 @@ jobs:
         id: release
         shell: bash -l {0}
         run: |
-          set -eo pipefail && fastlane release | tee fastlane.log
+          set -eo pipefail && bundle exec fastlane release | tee fastlane.log
           xcarchive_path=$(cat fastlane.log | grep -o '\XCArchive Path => .*' | sed -e 's/XCArchive Path => //g')
           echo "xcarchive-path=$xcarchive_path" >> $GITHUB_OUTPUT
       - name: Compress & Upload Artifact to QB Spaces
