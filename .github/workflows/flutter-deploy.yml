@@ -78,7 +78,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/publish-android@main
+      - uses: QuickBirdEng/actions/publish-android@dart-obfuscation
         with:
           clean: false
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
@@ -91,7 +91,7 @@ jobs:
           qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
           upload-key: ${{ secrets.UPLOAD_KEY }}
-      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@dart-obfuscation
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -112,7 +112,7 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/flutter-build@main
+      - uses: QuickBirdEng/actions/flutter-build@dart-obfuscation
         id: build
         with:
           build-type: ipa
@@ -138,7 +138,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           release-notes: ${{ inputs.ios-build-arguments }}
           submit-for-review: ${{ inputs.submit-ios-build-for-review }}
-      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@dart-obfuscation
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -175,7 +175,7 @@ jobs:
           signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
           qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
-      - uses: QuickBirdEng/actions/flutter-build@main
+      - uses: QuickBirdEng/actions/flutter-build@dart-obfuscation
         id: flutter-build
         with:
           clean: true
