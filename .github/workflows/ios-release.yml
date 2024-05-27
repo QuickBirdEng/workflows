@@ -33,17 +33,17 @@ jobs:
     if: inputs.run-check-version-job == true
     continue-on-error: true
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@v1
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/setup-fastlane@main
-        with: 
+      - uses: QuickBirdEng/actions/setup-ios@v1
+      - uses: QuickBirdEng/actions/setup-fastlane@v1
+        with:
           working-directory: ${{ inputs.working-directory }}
       - shell: bash -l {0}
         run: gem install bundler && bundle update
-        
+
       - name: Setup API Key (if secret is set)
         shell: bash
         run: |
@@ -58,7 +58,7 @@ jobs:
           APPLE_AUTH_KEY_ENCODING: "base64"
         run: fastlane check_version
   common:
-    uses: QuickBirdEng/workflows/.github/workflows/ios-common.yml@main
+    uses: QuickBirdEng/workflows/.github/workflows/ios-common.yml@v1
     needs: [check_version]
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     with:
@@ -72,15 +72,15 @@ jobs:
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     needs: [common, check_version]
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@v1
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - uses: QuickBirdEng/actions/setup-ios@v1
+      - uses: QuickBirdEng/actions/setup-fastlane@v1
         with:
           working-directory: ${{ inputs.working-directory }}
-      - uses: QuickBirdEng/actions/setup-fastlane-environment@main
+      - uses: QuickBirdEng/actions/setup-fastlane-environment@v1
         with:
           match-repository: ${{ secrets.MATCH_REPO }}
           match-password: ${{ secrets.MATCH_PASSWORD }}
@@ -108,7 +108,7 @@ jobs:
           echo "xcarchive-path=$xcarchive_path" >> $GITHUB_OUTPUT
       - name: Compress & Upload Artifact to QB Spaces
         if: ${{ github.ref_type == 'tag' }}
-        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@v1
         with:
           access-key: ${{ secrets.DO_ACCESS_KEY }}
           secret-key: ${{ secrets.DO_SECRET_KEY }}

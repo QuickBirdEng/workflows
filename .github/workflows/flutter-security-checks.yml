@@ -54,7 +54,7 @@ jobs:
         run: |
           echo 'TH_INCLUDE_PATHS=--include-paths=${{ inputs.relative-include-path }}' >> $GITHUB_ENV
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v1
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}

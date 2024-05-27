@@ -38,11 +38,11 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     if: contains('["nasirky","acpoppe","grafele"]', github.triggering_actor)
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@v1
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-environment@main
+      - uses: QuickBirdEng/actions/setup-environment@v1
       - run: git clone -b main --single-branch ${{ secrets.MATCH_REPO }}
       - name: Remove Certificates
         if: inputs.delete-certificates-from-repo
@@ -71,11 +71,11 @@ jobs:
 
           git remote add match ${{ secrets.MATCH_REPO }}
           git add . && git commit -m "Remove ${{ inputs.certificate-type }} profiles and (optionally) certificates for ${{ env.BUNDLE_ID }}" && git push match || true
-      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - uses: QuickBirdEng/actions/setup-fastlane@v1
         with:
           platform: ${{ inputs.platform }}
           working-directory: ${{ inputs.working-directory }}
-      - uses: QuickBirdEng/actions/setup-fastlane-environment@main
+      - uses: QuickBirdEng/actions/setup-fastlane-environment@v1
         with:
           match-repository: ${{ secrets.MATCH_REPO }}
           match-password: ${{ secrets.MATCH_PASSWORD }}

@@ -37,12 +37,12 @@ jobs:
             echo "Wrong input passed to 'fastlane-action-name'. Accepted values are 'test' and 'build'".
             exit 1
           fi
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@v1
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - uses: QuickBirdEng/actions/setup-ios@v1
+      - uses: QuickBirdEng/actions/setup-fastlane@v1
         with:
           working-directory: ${{ inputs.working-directory }}
       - shell: bash -l {0}
