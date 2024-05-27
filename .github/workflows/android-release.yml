@@ -24,14 +24,14 @@ jobs:
     steps:
       - name: Generate Build Number
         id: build-number-generator
-        run: | 
+        run: |
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
 
   branch:
     needs: [generate-build-number]
-    uses: QuickBirdEng/workflows/.github/workflows/android-common.yml@main
+    uses: QuickBirdEng/workflows/.github/workflows/android-common.yml@v1.1
     with:
       build-number: ${{ needs.generate-build-number.outputs.build-number }}
     secrets: inherit
@@ -44,10 +44,10 @@ jobs:
         with:
           lfs: ${{ inputs.git-lfs }}
       - run: echo "BuildForRelease=true" >> $GITHUB_ENV
-      - uses: QuickBirdEng/actions/setup-version@main
+      - uses: QuickBirdEng/actions/setup-version@v1.1
         with:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
-      - uses: QuickBirdEng/actions/setup-android@main
+      - uses: QuickBirdEng/actions/setup-android@v1.1
         with:
           key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
           key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: ./gradlew bundleRelease
       - name: Compress & Upload Artifact to QB Spaces
-        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@v1.1
         with:
           access-key: ${{ secrets.DO_ACCESS_KEY }}
           secret-key: ${{ secrets.DO_SECRET_KEY }}

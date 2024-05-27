@@ -53,7 +53,7 @@ jobs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
       - id: name-suffix-generator
-        uses: QuickBirdEng/actions/flutter-name-suffix-generator@main
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@v1.1
         with:
           platform: ios
           build-arguments: ${{ inputs.ios-build-arguments }}
@@ -65,7 +65,7 @@ jobs:
     if: contains(inputs.android-build-arguments, 'PRODUCTION')
     steps:
       - id: name-suffix-generator
-        uses: QuickBirdEng/actions/flutter-name-suffix-generator@main
+        uses: QuickBirdEng/actions/flutter-name-suffix-generator@v1.1
         with:
           platform: android
           build-arguments: ${{ inputs.android-build-arguments }}
@@ -74,11 +74,11 @@ jobs:
     runs-on: [self-hosted, Linux]
     needs: [generate-build-number]
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@v1.1
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/publish-android@main
+      - uses: QuickBirdEng/actions/publish-android@v1.1
         with:
           clean: false
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
@@ -91,7 +91,7 @@ jobs:
           qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
           upload-key: ${{ secrets.UPLOAD_KEY }}
-      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@v1.1
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -107,12 +107,12 @@ jobs:
     runs-on: [self-hosted, macOS]
     needs: [generate-build-number, ios-name-suffix-generation]
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@v1.1
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/flutter-build@main
+      - uses: QuickBirdEng/actions/setup-ios@v1.1
+      - uses: QuickBirdEng/actions/flutter-build@v1.1
         id: build
         with:
           build-type: ipa
@@ -120,7 +120,7 @@ jobs:
           build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
           clean: true
           working-directory: ${{ inputs.working-directory }}
-      - uses: QuickBirdEng/actions/publish-ios@main
+      - uses: QuickBirdEng/actions/publish-ios@v1.1
         with:
           apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
@@ -138,7 +138,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           release-notes: ${{ inputs.ios-build-arguments }}
           submit-for-review: ${{ inputs.submit-ios-build-for-review }}
-      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@v1.1
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -151,7 +151,7 @@ jobs:
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         if: contains(inputs.android-build-arguments, 'PRODUCTION')
-        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@v1.1
         with:
           access-key: ${{ secrets.DO_ACCESS_KEY }}
           secret-key: ${{ secrets.DO_SECRET_KEY }}
@@ -163,11 +163,11 @@ jobs:
     runs-on: [self-hosted, Linux]
     needs: [generate-build-number, android-name-suffix-generation]
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@v1.1
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-android@main
+      - uses: QuickBirdEng/actions/setup-android@v1.1
         with:
           key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
           key-store-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -175,7 +175,7 @@ jobs:
           signing-key-password: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
           qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
-      - uses: QuickBirdEng/actions/flutter-build@main
+      - uses: QuickBirdEng/actions/flutter-build@v1.1
         id: flutter-build
         with:
           clean: true
@@ -184,7 +184,7 @@ jobs:
           build-arguments: ${{ inputs.android-build-arguments }}
           working-directory: ${{ inputs.working-directory }}
       - name: Compress & Upload Artifact to QB Spaces
-        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@v1.1
         with:
           access-key: ${{ secrets.DO_ACCESS_KEY }}
           secret-key: ${{ secrets.DO_SECRET_KEY }}
