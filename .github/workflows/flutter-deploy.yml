@@ -79,6 +79,7 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/publish-android@dart-obfuscation
+        id: publish-android
         with:
           clean: false
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
@@ -100,7 +101,9 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          dart-symbols-file-path: ${{ steps.publish-android.outputs.artifact-dart-symbols-file-path }}
           proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
+          version-and-build-number: ${{ steps.publish-android.outputs.artifact-version-and-build-number }}
         continue-on-error: true
 
   ios-publish:
@@ -147,7 +150,9 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          dart-symbols-file-path: ${{ steps.build.outputs.artifact-dart-symbols-file-path }}
           dsyms-path: ${{ steps.build.outputs.artifact-path }}/dSYMs
+          version-and-build-number: ${{ steps.build.outputs.artifact-version-and-build-number }}
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         if: contains(inputs.android-build-arguments, 'PRODUCTION')

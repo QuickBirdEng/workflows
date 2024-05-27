@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Generate Build Number
         id: build-number-generator
-        run: | 
+        run: |
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"

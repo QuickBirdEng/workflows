@@ -114,6 +114,7 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/publish-android@main
+        id: publish-android
         with:
           clean: true
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
@@ -126,7 +127,7 @@ jobs:
           qbs-maven-username: ${{ secrets.QBS_DEV_MAVEN_USERNAME }}
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
           upload-key: ${{ secrets.UPLOAD_KEY }}
-      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@dart-obfuscation
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -135,7 +136,9 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          dart-symbols-file-path: ${{ steps.publish-android.outputs.artifact-dart-symbols-file-path }}
           proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
+          version-and-build-number: ${{ steps.publish-android.outputs.artifact-version-and-build-number }}
         continue-on-error: true
 
   ios-publish:
@@ -173,7 +176,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           release-notes: ${{ inputs.ios-build-arguments }}
           submit-for-review: ${{ inputs.submit-ios-build-for-review }}
-      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+      - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@dart-obfuscation
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -182,7 +185,9 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          dart-symbols-file-path: ${{ steps.build.outputs.artifact-dart-symbols-file-path }}
           dsyms-path: ${{ steps.build.outputs.artifact-path }}/dSYMs
+          version-and-build-number: ${{ steps.build.outputs.artifact-version-and-build-number }}
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
