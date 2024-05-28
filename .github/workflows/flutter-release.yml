@@ -153,17 +153,8 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/flutter-build@dart-obfuscation
-        id: build
-        with:
-          build-type: ipa
-          build-number: ${{ needs.generate-build-number.outputs.build-number }}
-          build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
-          clean: true
-          working-directory: ${{ inputs.working-directory }}
-          obfuscate: ${{ inputs.obfuscate }}
-      - uses: QuickBirdEng/actions/publish-ios@main
+      - uses: QuickBirdEng/actions/publish-ios@dart-obfuscation
+        id: publish-ios
         with:
           apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
@@ -181,6 +172,8 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           release-notes: ${{ inputs.ios-build-arguments }}
           submit-for-review: ${{ inputs.submit-ios-build-for-review }}
+          build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
+          obfuscate: true
       - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@dart-obfuscation
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
@@ -190,8 +183,8 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          dart-symbols-file-path: ${{ steps.build.outputs.artifact-dart-symbols-file-path }}
-          dsyms-path: ${{ steps.build.outputs.artifact-path }}/dSYMs
+          dart-symbols-file-path: ${{ steps.publish-ios.outputs.artifact-dsyms-path }}
+          dsyms-path: ${{ steps.publish-ios.outputs.artifact-dart-symbols-file-path }}
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
@@ -200,7 +193,7 @@ jobs:
           secret-key: ${{ secrets.DO_SECRET_KEY }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           name-suffix: ${{ needs.ios-name-suffix-generation.outputs.name-suffix }}
-          artifact-path: ${{ steps.build.outputs.artifact-path }}
+          artifact-path: ${{ steps.publish-ios.outputs.flutter-artifact-path }}
 
   android-bundle:
     runs-on: [self-hosted, Linux]
@@ -238,7 +231,7 @@ jobs:
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.flutter-build.outputs.artifact-dart-symbols-file-path }}
-          dsyms-path: ${{ steps.flutter-build.outputs.artifact-path }}/dSYMs
+          proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
