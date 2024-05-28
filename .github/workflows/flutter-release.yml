@@ -143,7 +143,6 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.publish-android.outputs.artifact-dart-symbols-file-path }}
           proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
-          version-and-build-number: ${{ steps.publish-android.outputs.artifact-version-and-build-number }}
         continue-on-error: true
 
   ios-publish:
@@ -193,7 +192,6 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.build.outputs.artifact-dart-symbols-file-path }}
           dsyms-path: ${{ steps.build.outputs.artifact-path }}/dSYMs
-          version-and-build-number: ${{ steps.build.outputs.artifact-version-and-build-number }}
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
@@ -241,7 +239,6 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.flutter-build.outputs.artifact-dart-symbols-file-path }}
           dsyms-path: ${{ steps.flutter-build.outputs.artifact-path }}/dSYMs
-          version-and-build-number: ${{ steps.flutter-build.outputs.artifact-version-and-build-number }}
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
