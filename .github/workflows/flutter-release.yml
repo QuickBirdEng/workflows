@@ -14,7 +14,7 @@ on:
         type: string
         required: false
       publish-to-testflight:
-        description: "Should publish to Testflight?"
+        description: "Should publish to Testflight? (Note: this parameter is not used and is only for backward compatibility)"
         type: boolean
         default: true
       working-directory:
@@ -160,8 +160,6 @@ jobs:
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
           apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
           apple-auth-key-encoding: "base64"
-          upload-key: ${{ secrets.UPLOAD_KEY }}
-          publish-to-testflight: ${{ inputs.publish-to-testflight }}
           match-password: ${{ secrets.MATCH_PASSWORD }}
           match-repository: ${{ secrets.MATCH_REPO }}
           match-apple-id: ${{ secrets.APPLE_ID }}
@@ -193,7 +191,7 @@ jobs:
           secret-key: ${{ secrets.DO_SECRET_KEY }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           name-suffix: ${{ needs.ios-name-suffix-generation.outputs.name-suffix }}
-          artifact-path: ${{ steps.publish-ios.outputs.flutter-artifact-path }}
+          artifact-path: ${{ steps.publish-ios.outputs.artifact-path }}
 
   android-bundle:
     runs-on: [self-hosted, Linux]
