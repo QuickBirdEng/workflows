@@ -170,7 +170,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           release-notes: ${{ inputs.ios-build-arguments }}
           submit-for-review: ${{ inputs.submit-ios-build-for-review }}
-          build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
+          build-arguments: ${{ inputs.ios-build-arguments }}
           obfuscate: true
       - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
         env:
