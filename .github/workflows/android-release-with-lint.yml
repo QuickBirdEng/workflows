@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Generate Build Number
         id: build-number-generator
-        run: | 
+        run: |
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
@@ -34,6 +34,7 @@ jobs:
     uses: ./.github/workflows/android-common-with-lint.yml
     with:
       build-number: ${{ needs.generate-build-number.outputs.build-number }}
+      upload-apk: true
     secrets: inherit
 
   android-bundle:

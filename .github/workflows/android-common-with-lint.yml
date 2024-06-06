@@ -13,7 +13,10 @@ on:
         description: "Checkout the project with git lfs"
         type: boolean
         default: false
-  workflow_dispatch:
+      upload-apk:
+        description: "Upload the apk to the Apps @ QuickBird"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -64,3 +67,9 @@ jobs:
       - name: Generate APK
         shell: bash
         run: ./gradlew assembleRelease
+      - name: "Publishing to apps.quickbirdstudios.com"
+        if: ${{ inputs.upload-apk }}
+        uses: QuickBirdEng/actions/qb-publish@main
+        with:
+          upload-key: ${{ secrets.UPLOAD_KEY }}
+          file: app/build/outputs/apk/release/app-release.apk

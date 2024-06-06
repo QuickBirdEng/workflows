@@ -34,17 +34,8 @@ jobs:
     uses: QuickBirdEng/workflows/.github/workflows/android-common.yml@main
     with:
       build-number: ${{ needs.generate-build-number.outputs.build-number }}
+      upload-apk: true
     secrets: inherit
-
-  publish-apps-qb:
-    runs-on: [self-hosted, Linux]
-    needs: [branch]
-    steps:
-      - name: "Publishing to apps.quickbirdstudios.com"
-        uses: QuickBirdEng/actions/qb-publish@main
-        with:
-          upload-key: ${{ secrets.UPLOAD_KEY }}
-          file: app/build/outputs/apk/release/app-release.apk
 
   android-bundle:
     runs-on: [self-hosted, Linux]

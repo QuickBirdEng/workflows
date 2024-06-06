@@ -34,6 +34,7 @@ jobs:
     uses: QuickBirdEng/workflows/.github/workflows/android-common.yml@main
     with:
       build-number: ${{ needs.generate-build-number.outputs.build-number }}
+      upload-apk: true
     secrets: inherit
 
   android-bundle:
