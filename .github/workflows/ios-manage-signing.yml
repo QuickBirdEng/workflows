@@ -85,6 +85,10 @@ jobs:
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
           apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
           apple-auth-key-encoding: "base64"
+      - name: Setup gems
+        shell: bash -l {0}
+        working-directory: ${{ inputs.working-directory }}
+        run: cd ios && gem install bundler && bundle install
       - name: Generate/Download provisioning profiles & (maybe) certificates
         shell: bash -l {0}
         run: |
