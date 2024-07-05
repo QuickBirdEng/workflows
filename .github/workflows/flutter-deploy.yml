@@ -75,7 +75,7 @@ jobs:
           build-arguments: ${{ inputs.android-build-arguments }}
 
   android-publish:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted]
     needs: [generate-build-number]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
@@ -160,7 +160,7 @@ jobs:
           artifact-path: ${{ steps.publish-ios.outputs.artifact-path }}
 
   android-bundle:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macOS]
     needs: [generate-build-number, android-name-suffix-generation]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main

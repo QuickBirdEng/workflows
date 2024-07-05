@@ -38,7 +38,7 @@ jobs:
     secrets: inherit
 
   android-bundle:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, macOS]
     needs: [generate-build-number, branch]
     steps:
       - uses: actions/checkout@v3

@@ -110,7 +110,7 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
 
   android-publish:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted]
     needs: [generate-build-number, lint, test]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
@@ -194,7 +194,7 @@ jobs:
           artifact-path: ${{ steps.publish-ios.outputs.artifact-path }}
 
   android-bundle:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted]
     needs: [generate-build-number, lint, test, android-name-suffix-generation]
     if: ${{ github.ref_type == 'tag' }}
     steps:
