@@ -1,0 +1,20 @@
+name: Flutter Package Branch Workflow
+
+on:
+  push:
+    branches:
+      - '**'
+      # For now, there's no separate staging workflow for packages, so run on all branches
+      #- '!main'
+      #- '!develop'
+      #- '!release/*'
+  workflow_dispatch:
+
+concurrency:
+  group: flutter-checks-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    uses: QuickBirdEng/workflows/.github/workflows/flutter-package-branch.yml@flutter-package-workflows
+    secrets: inherit

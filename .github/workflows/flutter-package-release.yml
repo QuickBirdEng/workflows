@@ -1,0 +1,102 @@
+name: Flutter Package Release Workflow
+env:
+  ENVIRONMENT_FILE: .env
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: "the directory to run each job of the workflow in"
+        type: string
+        default: "."
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
+      slack-channel-id:
+        description: "The slack channel id to send the message to"
+        type: string
+        required: true
+      package-name:
+        description: "The name of the package"
+        type: string
+        required: true
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: [self-hosted]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+      - run: flutter analyze
+
+  test:
+    runs-on: [self-hosted, Linux]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+      - run: flutter test --dart-define STAGE=mock
+
+  test-coverage:
+    runs-on: [self-hosted, Linux]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+      - run: flutter test --coverage --dart-define STAGE=mock
+      - uses: QuickBirdEng/actions/flutter-coverage@main
+        with:
+          path: ${{ env.CODE_COVERAGE_FILE_PATH }}
+          min_coverage: ${{ env.CODE_COVERAGE }}
+          exclude: ${{ env.CODE_COVERAGE_EXLUDE_FILE }}
+
+  slack-update-success:
+    runs-on: [self-hosted, Linux]
+    needs: [lint, test]
+    steps:
+      - name: Notify slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: pullreminders/slack-action@master
+        with:
+          args: '{\"channel\":\"${{ inputs.slack-channel-id }}\",\"text\":\"${{ inputs.package-name }} successfully released version ${{ github.ref }}\"}'
+
+  slack-update-failure:
+    runs-on: [self-hosted, Linux]
+    if: ${{ failure() }}
+    needs: [lint, test]
+    steps:
+      - name: Notify slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: pullreminders/slack-action@master
+        with:
+          args: '{\"channel\":\"${{ inputs.slack-channel-id }}\",\"text\":\"${{ inputs.package-name }} failed to release version ${{ github.ref }}\"}'
