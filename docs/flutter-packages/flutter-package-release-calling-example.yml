@@ -1,0 +1,19 @@
+name: Flutter Package Release Workflow
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+-?*\+?*
+  workflow_dispatch:
+
+concurrency:
+  group: flutter-checks-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    uses: QuickBirdEng/workflows/.github/workflows/flutter-package-release.yml@flutter-package-workflows
+    with:
+      package-name: '<YOUR PACKAGE NAME>'
+      slack-channel-id: '<CHANNEL ID TO SEND MESSAGE TO>'
+    secrets: inherit
