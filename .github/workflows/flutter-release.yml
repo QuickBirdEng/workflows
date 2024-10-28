@@ -119,6 +119,9 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
       - name: Download sonar-scanner
         run: |
           curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.1.0.4477-linux-x64.zip
