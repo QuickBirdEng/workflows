@@ -89,7 +89,7 @@ jobs:
       - name: Run sonar-scanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
         run: |
           $HOME/.sonar/sonar-scanner-6.1.0.4477-linux-x64/bin/sonar-scanner \
             -Dsonar.projectKey=HP-Zenner-Flutter
