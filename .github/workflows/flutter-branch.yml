@@ -53,6 +53,7 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
+
   test:
     runs-on: [self-hosted, Linux]
     defaults:
@@ -67,6 +68,31 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
+
+  static-analysis:
+    runs-on: [self-hosted, Linux]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+      - name: Download sonar-scanner
+        run: |
+          curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.1.0.4477-linux-x64.zip
+          unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
+      - name: Run sonar-scanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          $HOME/.sonar/sonar-scanner-6.1.0.4477-linux-x64/bin/sonar-scanner \
+            -Dsonar.projectKey=HP-Zenner-Flutter
 
   test-coverage:
     runs-on: [self-hosted, Linux]
