@@ -89,6 +89,9 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - uses: QuickBirdEng/actions/sonarqube-flutter@sonarqube
+        with:
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          sonar-host-url: ${{ vars.SONAR_HOST_URL }}
 
   test-coverage:
     runs-on: [self-hosted, Linux]
