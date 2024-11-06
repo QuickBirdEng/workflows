@@ -21,6 +21,11 @@ on:
         description: "the directory to run each job of the workflow in"
         type: string
         default: "."
+      static-analysis:
+        description: "Run static analysis with Sonarqube"
+        type: boolean
+        required: false
+        default: false
       submit-ios-build-for-review:
         description: 'Submit TestFlight Build for Review'
         type: boolean
@@ -108,6 +113,25 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
+
+  static-analysis:
+    runs-on: [self-hosted, Linux]
+    if: ${{ inputs.static-analysis }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+      - uses: QuickBirdEng/actions/sonarqube-flutter@main
+        with:
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          sonar-host-url: ${{ vars.SONAR_HOST_URL }}
 
   android-publish:
     runs-on: [self-hosted]
