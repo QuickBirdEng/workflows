@@ -24,6 +24,7 @@ on:
       static-analysis:
         description: "Run static analysis with Sonarqube"
         type: boolean
+        required: false
         default: false
       submit-ios-build-for-review:
         description: 'Submit TestFlight Build for Review'

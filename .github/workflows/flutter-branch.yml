@@ -20,6 +20,7 @@ on:
       static-analysis:
         description: "Run static analysis with Sonarqube"
         type: boolean
+        required: false
         default: false
       git-lfs:
         description: "Checkout the project with git lfs"
