@@ -17,6 +17,10 @@ on:
         description: "the directory to run each job of the workflow in"
         type: string
         default: "."
+      static-analysis:
+        description: "Run static analysis with Sonarqube"
+        type: boolean
+        default: false
       git-lfs:
         description: "Checkout the project with git lfs"
         type: boolean
@@ -71,6 +75,7 @@ jobs:
 
   static-analysis:
     runs-on: [self-hosted, Linux]
+    if: ${{ inputs.static-analysis }}
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
