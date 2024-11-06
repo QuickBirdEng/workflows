@@ -88,7 +88,7 @@ jobs:
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           working-directory: ${{ inputs.working-directory }}
-      - uses: QuickBirdEng/actions/sonarqube-flutter@sonarqube
+      - uses: QuickBirdEng/actions/sonarqube-flutter@main
         with:
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           sonar-host-url: ${{ vars.SONAR_HOST_URL }}
