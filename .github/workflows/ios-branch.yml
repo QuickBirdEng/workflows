@@ -1,0 +1,70 @@
+name: iOS Branch Workflow
+env:
+  ENVIRONMENT_FILE: .env
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: 'the directory to run each job of the workflow in'
+        type: string
+        default: '.'
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-branch
+  cancel-in-progress: true
+
+jobs:
+  generate-build-number:
+    runs-on: [self-hosted]
+    outputs:
+      build-number: ${{ steps.build-number-generator.outputs.build-number }}
+    steps:
+      - name: Generate Build Number
+        id: build-number-generator
+        run: |
+          build_number=$(date +%s)
+          echo "build-number=$build_number" >> $GITHUB_OUTPUT
+          echo "Build Number: $build_number"
+  lint:
+    runs-on: [self-hosted, macOS]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: irgaly/setup-mint@v1
+        with:
+          mint-executable-directory: ./mint-bin
+      - run: ./mint-bin/mint run xcodegen
+      - run: ./mint-bin/mint run swiftlint swiftlint
+
+      #- uses: QuickBirdEng/actions/setup-ios@main
+      #- uses: QuickBirdEng/actions/setup-fastlane@main
+        #with:
+          #working-directory: ${{ inputs.working-directory }}
+      #- shell: bash -l {0}
+        #run: gem install bundler && bundle update
+      #- name: Setup API Key (if secret is set)
+        #shell: bash
+        #run: |
+          #if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
+            #echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
+          #fi
+      #- shell: bash -l {0}
+        #env:
+          #MATCH_REPO: ${{ secrets.MATCH_REPO }}
+          #MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          #APPLE_AUTH_KEY_ID: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          #APPLE_AUTH_KEY_ISSUER_ID: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          #APPLE_AUTH_KEY_CONTENT: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          #APPLE_AUTH_KEY_ENCODING: "base64"
+        #run: fastlane lint
