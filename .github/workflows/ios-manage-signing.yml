@@ -81,7 +81,7 @@ jobs:
 
           git remote add match ${{ secrets.MATCH_REPO }}
           git add . && git commit -m "Remove ${{ inputs.certificate-type }} profiles and (optionally) certificates for ${{ env.BUNDLE_ID }}" && git push match || true
-      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - uses: QuickBirdEng/actions/setup-fastlane@update-ios-workflows
         with:
           platform: ${{ inputs.platform }}
           working-directory: ${{ inputs.working-directory }}
