@@ -218,6 +218,6 @@ jobs:
     if: ${{ inputs.dependency-reports }}
     uses: QuickBirdEng/workflows/.github/workflows/vulnerability-and-outdated-packages-report.yml@main
     with:
-      flutter-working-dir: ${{ inputs.working-directory }}
+      flutter-working-directory: ${{ inputs.working-directory }}
       flutter-report: true
     secrets: inherit
