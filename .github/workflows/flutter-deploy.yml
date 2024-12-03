@@ -33,7 +33,17 @@ on:
         description: "Should obfuscate the dart code?"
         type: boolean
         default: false
+      dependency-reports:
+        description: "Generate dependency reports"
+        type: boolean
+        default: true
+
   workflow_dispatch:
+    inputs:
+      dependency-reports:
+        description: "Generate dependency reports"
+        type: boolean
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -204,3 +214,10 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           name-suffix: ${{ needs.android-name-suffix-generation.outputs.name-suffix }}
           artifact-path: ${{ steps.flutter-build.outputs.artifact-path }}
+  dependency-reports:
+    if: ${{ inputs.dependency-reports }}
+    uses: QuickBirdEng/workflows/.github/workflows/vulnerability-and-outdated-packages-report.yml@main
+    with:
+      flutter-working-dir: ${{ inputs.working-directory }}
+      flutter-report: true
+    secrets: inherit
