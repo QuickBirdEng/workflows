@@ -121,6 +121,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-ios@main
       - uses: QuickBirdEng/actions/flutter-build@main
         with:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
