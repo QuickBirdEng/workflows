@@ -76,7 +76,7 @@ jobs:
         with:
           mint-executable-directory: ./mint-bin
       - run: ./mint-bin/mint run xcodegen
-      - uses: QuickBirdEng/actions/setup-fastlane-environment@main
+      - uses: QuickBirdEng/actions/setup-fastlane-environment@update-ios-workflows
         with:
           apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
