@@ -101,7 +101,7 @@ jobs:
       - shell: bash -l {0}
         working-directory: ${{ inputs.working-directory }}
         run: bundle exec fastlane match_for_signing
-      - run: xcodebuild test -workspace ${{ inputs.workspace-path }} -scheme ${{ inputs.test-scheme-name }} -destination 'platform=iOS Simulator,name=${{ inputs.test-simulator-device-name }},OS=${{ inputs.test-simulator-device-version }}' -enableCodeCoverage YES
+      - run: xcodebuild test -workspace ${{ inputs.workspace-path }} -scheme ${{ inputs.test-scheme-name }} -destination 'platform=iOS Simulator,name=${{ inputs.test-simulator-device-name }},OS=${{ inputs.test-simulator-device-version }}' -enableCodeCoverage YES -quiet
 
       #- uses: QuickBirdEng/actions/setup-ios@main
       #- uses: QuickBirdEng/actions/setup-fastlane@main
