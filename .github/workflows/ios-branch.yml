@@ -17,6 +17,10 @@ on:
         description: "The path to the workspace file"
         type: string
         required: true
+      scheme-name:
+        description: 'Scheme name'
+        type: string
+        required: true
       test-scheme-name:
         description: "The name of the test scheme"
         type: string
@@ -89,7 +93,6 @@ jobs:
           match-keychain-password: ${{ secrets.FASTLANE_KEYCHAIN_PASSWORD }}
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           slack-slug: ${{ secrets.SLACK_SLUG }}
-          working-directory: ${{ inputs.working-directory }}
       - uses: QuickBirdEng/actions/setup-fastlane@update-ios-workflows
         with:
           platform: ios
@@ -102,25 +105,21 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: bundle exec fastlane match_for_signing
       - run: xcodebuild test -workspace ${{ inputs.workspace-path }} -scheme ${{ inputs.test-scheme-name }} -destination 'platform=iOS Simulator,name=${{ inputs.test-simulator-device-name }},OS=${{ inputs.test-simulator-device-version }}' -enableCodeCoverage YES -quiet
-
-      #- uses: QuickBirdEng/actions/setup-ios@main
-      #- uses: QuickBirdEng/actions/setup-fastlane@main
-        #with:
-          #working-directory: ${{ inputs.working-directory }}
-      #- shell: bash -l {0}
-        #run: gem install bundler && bundle update
-      #- name: Setup API Key (if secret is set)
-        #shell: bash
-        #run: |
-          #if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
-            #echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
-          #fi
-      #- shell: bash -l {0}
-        #env:
-          #MATCH_REPO: ${{ secrets.MATCH_REPO }}
-          #MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          #APPLE_AUTH_KEY_ID: ${{ secrets.APPLE_AUTH_KEY_ID }}
-          #APPLE_AUTH_KEY_ISSUER_ID: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
-          #APPLE_AUTH_KEY_CONTENT: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
-          #APPLE_AUTH_KEY_ENCODING: "base64"
-        #run: fastlane lint
+  build-ios:
+    runs-on: [self-hosted, macOS]
+    needs: [generate-build-number, test, lint]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: irgaly/setup-mint@v1
+        with:
+          mint-executable-directory: ./mint-bin
+      - run: ./mint-bin/mint run xcodegen
+      - uses: QuickBirdEng/actions/native-ios-build@update-ios-workflows
+        with:
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+          working-directory: ${{ inputs.working-directory }}
+          workspace-path: ${{ inputs.workspace-path }}
+          scheme-name: ${{ inputs.scheme-name }}
