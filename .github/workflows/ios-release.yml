@@ -5,14 +5,6 @@ env:
 on:
   workflow_call:
     inputs:
-      run-check-version-job:
-        description: 'Run check version job'
-        type: boolean
-        default: false
-      fastlane-action-name:
-        description: 'Value can be test or build'
-        type: string
-        required: true
       working-directory:
         description: 'the directory to run each job of the workflow in'
         type: string
@@ -21,97 +13,264 @@ on:
         description: "Checkout the project with git lfs"
         type: boolean
         default: false
+      workspace-path:
+        description: "The path to the workspace file"
+        type: string
+        required: true
+      scheme-name:
+        description: 'Scheme name'
+        type: string
+        required: true
+      test-scheme-name:
+        description: "The name of the test scheme"
+        type: string
+        required: true
+      test-simulator-device-name:
+        description: "The device spec for the test"
+        type: string
+        required: true
+      test-simulator-device-version:
+        description: "The device version for the test"
+        type: string
+        required: true
+      release-notes:
+        description: "The release notes"
+        type: string
+        required: true
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-release
+  group: ${{ github.workflow }}-${{ github.ref }}-branch
   cancel-in-progress: true
 
 jobs:
-  check_version:
-    runs-on: [self-hosted, MacOS]
-    if: inputs.run-check-version-job == true
-    continue-on-error: true
+  generate-build-number:
+    runs-on: [self-hosted]
+    outputs:
+      build-number: ${{ steps.build-number-generator.outputs.build-number }}
     steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-          git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/setup-fastlane@main
-        with: 
-          working-directory: ${{ inputs.working-directory }}
-      - shell: bash -l {0}
-        run: gem install bundler && bundle update
-        
-      - name: Setup API Key (if secret is set)
-        shell: bash
+      - name: Generate Build Number
+        id: build-number-generator
         run: |
-          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
-            echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
-          fi
-      - shell: bash -l {0}
-        env:
-          APPLE_AUTH_KEY_ID: ${{ secrets.APPLE_AUTH_KEY_ID }}
-          APPLE_AUTH_KEY_ISSUER_ID: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
-          APPLE_AUTH_KEY_CONTENT: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
-          APPLE_AUTH_KEY_ENCODING: "base64"
-        run: fastlane check_version
-  common:
-    uses: QuickBirdEng/workflows/.github/workflows/ios-common.yml@main
-    needs: [check_version]
-    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
-    with:
-      fastlane-action-name: ${{ inputs.fastlane-action-name }}
-    secrets: inherit
-  publish:
-    runs-on: [self-hosted, MacOS]
+          build_number=$(date +%s)
+          echo "build-number=$build_number" >> $GITHUB_OUTPUT
+          echo "Build Number: $build_number"
+  lint:
+    runs-on: [self-hosted, macOS]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
-    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
-    needs: [common, check_version]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-ios@main
-      - uses: QuickBirdEng/actions/setup-fastlane@main
+      - uses: irgaly/setup-mint@v1
         with:
-          working-directory: ${{ inputs.working-directory }}
-      - uses: QuickBirdEng/actions/setup-fastlane-environment@main
+          mint-executable-directory: ./mint-bin
+      - run: ./mint-bin/mint run xcodegen
+      - run: ./mint-bin/mint run swiftlint swiftlint
+  test:
+    runs-on: [self-hosted, macOS]
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
-          match-repository: ${{ secrets.MATCH_REPO }}
-          match-password: ${{ secrets.MATCH_PASSWORD }}
-          match-apple-id: ${{ secrets.APPLE_ID }}
-          match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: irgaly/setup-mint@v1
+        with:
+          mint-executable-directory: ./mint-bin
+      - run: ./mint-bin/mint run xcodegen
+      - uses: QuickBirdEng/actions/setup-fastlane-environment@update-ios-workflows
+        with:
           apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
           apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
           apple-auth-key-encoding: "base64"
+          match-password: ${{ secrets.MATCH_PASSWORD }}
+          match-repository: ${{ secrets.MATCH_REPO }}
+          match-apple-id: ${{ secrets.APPLE_ID }}
+          match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          match-keychain-password: ${{ secrets.FASTLANE_KEYCHAIN_PASSWORD }}
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
           slack-slug: ${{ secrets.SLACK_SLUG }}
-      - shell: bash -l {0}
-        run: gem install bundler && bundle update
-      - name: Setup API Key (if secret is set)
-        shell: bash
-        run: |
-          if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
-            echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
-          fi
-      - name: Upload to TestFlight
-        id: release
+      - uses: QuickBirdEng/actions/setup-fastlane@update-ios-workflows
+        with:
+          platform: ios
+          working-directory: ${{ inputs.working-directory }}
+      - name: Setup Gems
         shell: bash -l {0}
-        run: |
-          set -eo pipefail && bundle exec fastlane release | tee fastlane.log
-          xcarchive_path=$(cat fastlane.log | grep -o '\XCArchive Path => .*' | sed -e 's/XCArchive Path => //g')
-          echo "xcarchive-path=$xcarchive_path" >> $GITHUB_OUTPUT
+        working-directory: ${{ inputs.working-directory }}
+        run: gem install bundler && bundle update
+      - shell: bash -l {0}
+        working-directory: ${{ inputs.working-directory }}
+        run: bundle exec fastlane match_for_signing
+      - run: xcodebuild test -workspace ${{ inputs.workspace-path }} -scheme ${{ inputs.test-scheme-name }} -destination 'platform=iOS Simulator,name=${{ inputs.test-simulator-device-name }},OS=${{ inputs.test-simulator-device-version }}' -enableCodeCoverage YES -quiet
+  ios-release:
+    runs-on: [self-hosted, macOS]
+    needs: [generate-build-number, lint, test]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/release-ios@update-ios-workflows
+        id: release-ios
+        with:
+          apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          apple-auth-key-encoding: "base64"
+          match-password: ${{ secrets.MATCH_PASSWORD }}
+          match-repository: ${{ secrets.MATCH_REPO }}
+          match-apple-id: ${{ secrets.APPLE_ID }}
+          match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          match-keychain-password: ${{ secrets.FASTLANE_KEYCHAIN_PASSWORD }}
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+          slack-slug: ${{ secrets.SLACK_SLUG }}
+          working-directory: ${{ inputs.working-directory }}
+          release-notes: ${{ inputs.release-notes }}
+          workspace-path: ${{ inputs.workspace-path }}
+          scheme-name: ${{ inputs.scheme-name }}
+          platform: ios
       - name: Compress & Upload Artifact to QB Spaces
-        if: ${{ github.ref_type == 'tag' }}
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
         with:
           access-key: ${{ secrets.DO_ACCESS_KEY }}
           secret-key: ${{ secrets.DO_SECRET_KEY }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          name-suffix: ios
-          artifact-path: ${{ steps.release.outputs.xcarchive-path }}
+          name-suffix: ''
+          artifact-path: ${{ steps.release-ios.outputs.artifact-path }}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#name: iOS Release Workflow
+#env:
+  #ENVIRONMENT_FILE: .env
+
+#on:
+  #workflow_call:
+    #inputs:
+      #run-check-version-job:
+        #description: 'Run check version job'
+        #type: boolean
+        #default: false
+      #fastlane-action-name:
+        #description: 'Value can be test or build'
+        #type: string
+        #required: true
+      #working-directory:
+        #description: 'the directory to run each job of the workflow in'
+        #type: string
+        #default: '.'
+      #git-lfs:
+        #description: "Checkout the project with git lfs"
+        #type: boolean
+        #default: false
+  #workflow_dispatch:
+
+#concurrency:
+  #group: ${{ github.workflow }}-${{ github.ref }}-release
+  #cancel-in-progress: true
+
+#jobs:
+  #check_version:
+    #runs-on: [self-hosted, MacOS]
+    #if: inputs.run-check-version-job == true
+    #continue-on-error: true
+    #steps:
+      #- uses: QuickBirdEng/actions/checkout-ssh@main
+        #with:
+          #ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          #git-lfs: ${{ inputs.git-lfs }}
+      #- uses: QuickBirdEng/actions/setup-ios@main
+      #- uses: QuickBirdEng/actions/setup-fastlane@main
+        #with: 
+          #working-directory: ${{ inputs.working-directory }}
+      #- shell: bash -l {0}
+        #run: gem install bundler && bundle update
+        
+      #- name: Setup API Key (if secret is set)
+        #shell: bash
+        #run: |
+          #if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
+            #echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
+          #fi
+      #- shell: bash -l {0}
+        #env:
+          #APPLE_AUTH_KEY_ID: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          #APPLE_AUTH_KEY_ISSUER_ID: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          #APPLE_AUTH_KEY_CONTENT: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          #APPLE_AUTH_KEY_ENCODING: "base64"
+        #run: fastlane check_version
+  #common:
+    #uses: QuickBirdEng/workflows/.github/workflows/ios-common.yml@main
+    #needs: [check_version]
+    #if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    #with:
+      #fastlane-action-name: ${{ inputs.fastlane-action-name }}
+    #secrets: inherit
+  #publish:
+    #runs-on: [self-hosted, MacOS]
+    #defaults:
+      #run:
+        #working-directory: ${{ inputs.working-directory }}
+    #if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    #needs: [common, check_version]
+    #steps:
+      #- uses: QuickBirdEng/actions/checkout-ssh@main
+        #with:
+          #ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          #git-lfs: ${{ inputs.git-lfs }}
+      #- uses: QuickBirdEng/actions/setup-ios@main
+      #- uses: QuickBirdEng/actions/setup-fastlane@main
+        #with:
+          #working-directory: ${{ inputs.working-directory }}
+      #- uses: QuickBirdEng/actions/setup-fastlane-environment@main
+        #with:
+          #match-repository: ${{ secrets.MATCH_REPO }}
+          #match-password: ${{ secrets.MATCH_PASSWORD }}
+          #match-apple-id: ${{ secrets.APPLE_ID }}
+          #match-apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          #apple-auth-key-id: ${{ secrets.APPLE_AUTH_KEY_ID }}
+          #apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
+          #apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
+          #apple-auth-key-encoding: "base64"
+          #slack-slug: ${{ secrets.SLACK_SLUG }}
+      #- shell: bash -l {0}
+        #run: gem install bundler && bundle update
+      #- name: Setup API Key (if secret is set)
+        #shell: bash
+        #run: |
+          #if [[ '${{ secrets.RAW_API_KEY }}' != '' ]]; then
+            #echo "API_KEY=${{ secrets.RAW_API_KEY }}" > Secrets.xcconfig
+          #fi
+      #- name: Upload to TestFlight
+        #id: release
+        #shell: bash -l {0}
+        #run: |
+          #set -eo pipefail && bundle exec fastlane release | tee fastlane.log
+          #xcarchive_path=$(cat fastlane.log | grep -o '\XCArchive Path => .*' | sed -e 's/XCArchive Path => //g')
+          #echo "xcarchive-path=$xcarchive_path" >> $GITHUB_OUTPUT
+      #- name: Compress & Upload Artifact to QB Spaces
+        #if: ${{ github.ref_type == 'tag' }}
+        #uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
+        #with:
+          #access-key: ${{ secrets.DO_ACCESS_KEY }}
+          #secret-key: ${{ secrets.DO_SECRET_KEY }}
+          #repo-token: ${{ secrets.GITHUB_TOKEN }}
+          #name-suffix: ios
+          #artifact-path: ${{ steps.release.outputs.xcarchive-path }}
