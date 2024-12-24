@@ -22,6 +22,10 @@ on:
         type: boolean
         required: false
         default: false
+      sonarqube-token:
+        description: "The token to authenticate with Sonarqube"
+        type: string
+        required: false
       git-lfs:
         description: "Checkout the project with git lfs"
         type: boolean
@@ -90,7 +94,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - uses: QuickBirdEng/actions/sonarqube-flutter@main
         with:
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          sonar-token: ${{ inputs.sonarqube-token }}
           sonar-host-url: ${{ vars.SONAR_HOST_URL }}
 
   test-coverage:
