@@ -26,10 +26,6 @@ on:
         type: boolean
         required: false
         default: false
-      sonarqube-token:
-        description: "The token to authenticate with Sonarqube"
-        type: string
-        required: false
       submit-ios-build-for-review:
         description: 'Submit TestFlight Build for Review'
         type: boolean
@@ -138,7 +134,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - uses: QuickBirdEng/actions/sonarqube-flutter@main
         with:
-          sonar-token: ${{ inputs.sonarqube-token }}
+          sonar-token: ${{ secrets.SONAR_TOKEN_FLUTTER }}
           sonar-host-url: ${{ vars.SONAR_HOST_URL }}
 
   android-publish:
