@@ -1,4 +1,4 @@
-name: K8s App Setup
+name: K8s Create Service Mesh
 
 on:
   workflow_call:
