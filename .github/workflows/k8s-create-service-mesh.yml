@@ -22,7 +22,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSfL https://run.linkerd.io/install-edge | sh
       - name: Add linkerd to path
         run: |
-          export PATH=$PATH:$HOME/.linkerd2/bin
+          echo "$HOME/.linkerd2/bin" >> $GITHUB_PATH
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
         with:
