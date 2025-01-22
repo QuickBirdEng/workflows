@@ -35,6 +35,7 @@ jobs:
       - name: Install linkerd control plane to cluster
         run: |
           linkerd install | kubectl apply -f -
+        # May need to add a sleep or something here so that
       - name: Add annotation to ingress-nginx deployment
         run: |
           kubectl get -n nginx-ingress-controller deploy -o yaml | linkerd inject - | kubectl apply -f -
