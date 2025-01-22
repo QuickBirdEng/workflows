@@ -25,6 +25,11 @@ on:
         description: 'Submit TestFlight Build for Review'
         type: boolean
         default: false
+      static-analysis:
+        description: "Run static analysis with Sonarqube"
+        type: boolean
+        required: false
+        default: false
       git-lfs:
         description: "Checkout the project with git lfs"
         type: boolean
@@ -69,6 +74,25 @@ jobs:
         with:
           platform: android
           build-arguments: ${{ inputs.android-build-arguments }}
+
+  static-analysis:
+    runs-on: [self-hosted, Linux]
+    if: ${{ inputs.static-analysis }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+      - uses: QuickBirdEng/actions/sonarqube-flutter@main
+        with:
+          sonar-token: ${{ secrets.SONAR_TOKEN_FLUTTER }}
+          sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
 
   android-publish:
     runs-on: [self-hosted, Linux]
