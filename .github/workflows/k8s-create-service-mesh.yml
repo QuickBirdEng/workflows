@@ -58,3 +58,6 @@ jobs:
           spec:
             trafficPolicy: Allow
           EOF
+      - name: Add linkerd visualizer
+        run: |
+          linkerd viz install | kubectl apply -f -
