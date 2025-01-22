@@ -135,7 +135,7 @@ jobs:
       - uses: QuickBirdEng/actions/sonarqube-flutter@main
         with:
           sonar-token: ${{ secrets.SONAR_TOKEN_FLUTTER }}
-          sonar-host-url: ${{ vars.SONAR_HOST_URL }}
+          sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
 
   android-publish:
     runs-on: [self-hosted]
