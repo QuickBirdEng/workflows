@@ -1,0 +1,59 @@
+name: K8s Create Service Mesh
+
+on:
+  workflow_call:
+    inputs:
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
+  workflow_dispatch:
+
+jobs:
+  k8s-setup-app:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","kupeliorhun"]', github.triggering_actor)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.git-lfs }}
+      - name: Install linkerd
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSfL https://run.linkerd.io/install-edge | sh
+      - name: Add linkerd to path
+        run: |
+          export PATH=$PATH:$HOME/.linkerd2/bin
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - name: Install linkerd CRDs to cluster
+        run: |
+          linkerd install --crds | kubectl apply -f -
+      - name: Install linkerd control plane to cluster
+        run: |
+          linkerd install | kubectl apply -f -
+      - name: Add annotation to ingress-nginx deployment
+        run: |
+          kubectl get -n nginx-ingress-controller deploy -o yaml | linkerd inject - | kubectl apply -f -
+        # Explicit egress is necessary so that default opaque ports are used properly
+        # See: https://github.com/linkerd/linkerd2/issues/13475
+      - name: Add linkerd explicit egress
+        run: |
+          cat <<EOF | kubectl apply -f -
+          ---
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: linkerd-egress
+          ---
+          apiVersion: policy.linkerd.io/v1alpha1
+          kind: EgressNetwork
+          metadata:
+            namespace: linkerd-egress
+            name: all
+          spec:
+            trafficPolicy: Allow
+          EOF
