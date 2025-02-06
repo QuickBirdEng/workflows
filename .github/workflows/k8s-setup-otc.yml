@@ -73,7 +73,7 @@ jobs:
 
           helm repo update
 
-          helm install cert-manager jetpack/cert-manager --version 1.13.0 -n cert-manager --create-namespace --set installCRDs=true
+          helm install cert-manager jetpack/cert-manager --version v1.17.0 -n cert-manager --create-namespace --set installCRDs=true
       - name: Apply Cluster Issuers
         run: |
           kubectl apply -f ${{ inputs.issuer_yaml }}
