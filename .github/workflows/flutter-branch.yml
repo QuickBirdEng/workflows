@@ -56,6 +56,8 @@ jobs:
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
+          use-cache: false
+          clean: true
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
 
@@ -71,6 +73,8 @@ jobs:
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
+          use-cache: false
+          clean: true
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --dart-define STAGE=mock
 
@@ -87,6 +91,8 @@ jobs:
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
+          use-cache: false
+          clean: true
           working-directory: ${{ inputs.working-directory }}
       - uses: QuickBirdEng/actions/sonarqube-flutter@main
         with:
@@ -105,6 +111,8 @@ jobs:
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
+          use-cache: false
+          clean: true
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --coverage --dart-define STAGE=mock
       - uses: QuickBirdEng/actions/flutter-coverage@main
@@ -122,8 +130,12 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
       - uses: QuickBirdEng/actions/setup-ios@main
+        with:
+          use-cache: false
       - uses: QuickBirdEng/actions/flutter-build@main
         with:
+          use-cache: false
+          clean: true
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           build-type: "ios"
           build-arguments: --no-codesign ${{ inputs.ios-build-arguments }}
@@ -147,6 +159,8 @@ jobs:
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
       - uses: QuickBirdEng/actions/flutter-build@main
         with:
+          use-cache: false
+          clean: true
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           build-type: "apk"
           build-arguments: ${{ inputs.android-build-arguments }}
