@@ -109,17 +109,21 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-environment@main
       - uses: QuickBirdEng/actions/setup-flutter@main
+        if: ${{ env.CODE_COVERAGE != '' && env.CODE_COVERAGE != 0 }}
         with:
           use-cache: false
           clean: true
           working-directory: ${{ inputs.working-directory }}
       - run: flutter test --coverage --dart-define STAGE=mock
+        if: ${{ env.CODE_COVERAGE != '' && env.CODE_COVERAGE != 0 }}
       - uses: QuickBirdEng/actions/flutter-coverage@main
         with:
           path: ${{ env.CODE_COVERAGE_FILE_PATH }}
           min_coverage: ${{ env.CODE_COVERAGE }}
           exclude: ${{ env.CODE_COVERAGE_EXLUDE_FILE }}
+        if: ${{ env.CODE_COVERAGE != '' && env.CODE_COVERAGE != 0 }}
 
   build-ios:
     runs-on: [self-hosted, macOS]
