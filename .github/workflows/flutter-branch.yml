@@ -34,7 +34,8 @@ concurrency:
 
 jobs:
   generate-build-number:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     outputs:
       build-number: ${{ steps.build-number-generator.outputs.build-number }}
     steps:
@@ -45,7 +46,8 @@ jobs:
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
   lint:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -62,7 +64,8 @@ jobs:
       - run: flutter analyze
 
   test:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -79,7 +82,8 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
 
   static-analysis:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     if: ${{ inputs.static-analysis }}
     defaults:
       run:
@@ -100,7 +104,8 @@ jobs:
           sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
 
   test-coverage:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}

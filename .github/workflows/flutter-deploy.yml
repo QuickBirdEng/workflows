@@ -51,7 +51,8 @@ concurrency:
 
 jobs:
   generate-build-number:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     outputs:
       build-number: ${{ steps.build-number-generator.outputs.build-number }}
     steps:
@@ -62,7 +63,8 @@ jobs:
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
   ios-name-suffix-generation:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
@@ -73,7 +75,8 @@ jobs:
           build-arguments: ${{ inputs.ios-build-arguments }}
 
   android-name-suffix-generation:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     if: contains(inputs.android-build-arguments, 'PRODUCTION')
