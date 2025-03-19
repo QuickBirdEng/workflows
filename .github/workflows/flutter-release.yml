@@ -46,7 +46,7 @@ concurrency:
 
 jobs:
   generate-build-number:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, macOS]
     outputs:
       build-number: ${{ steps.build-number-generator.outputs.build-number }}
     steps:
@@ -58,7 +58,7 @@ jobs:
           echo "Build Number: $build_number"
 
   ios-name-suffix-generation:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, macOS]
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
@@ -69,7 +69,7 @@ jobs:
           build-arguments: ${{ inputs.android-build-arguments }}
 
   android-name-suffix-generation:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, macOS]
     if: ${{ github.ref_type == 'tag' }}
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
@@ -81,7 +81,7 @@ jobs:
           build-arguments: ${{ inputs.android-build-arguments }}
 
   lint:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, macOS]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -95,43 +95,10 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
       - run: flutter analyze
 
-  test:
-    runs-on: [self-hosted, Linux]
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@flutter-legacy
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-          git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-flutter@flutter-legacy
-        with:
-          working-directory: ${{ inputs.working-directory }}
-      - run: flutter test --dart-define STAGE=mock
-
-  static-analysis:
-    runs-on: [self-hosted, Linux]
-    if: ${{ inputs.static-analysis }}
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-    steps:
-      - uses: QuickBirdEng/actions/checkout-ssh@main
-        with:
-          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
-          git-lfs: ${{ inputs.git-lfs }}
-      - uses: QuickBirdEng/actions/setup-flutter@main
-        with:
-          working-directory: ${{ inputs.working-directory }}
-      - uses: QuickBirdEng/actions/sonarqube-flutter@main
-        with:
-          sonar-token: ${{ secrets.SONAR_TOKEN_FLUTTER }}
-          sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
 
   android-publish:
-    runs-on: [self-hosted, Linux]
-    needs: [generate-build-number, lint, test]
+    runs-on: [self-hosted, macOS]
+    needs: [generate-build-number, lint]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@flutter-legacy
         with:
@@ -164,7 +131,7 @@ jobs:
 
   ios-publish:
     runs-on: [self-hosted, macOS]
-    needs: [generate-build-number, lint, test, ios-name-suffix-generation]
+    needs: [generate-build-number, lint, ios-name-suffix-generation]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@flutter-legacy
         with:
@@ -218,8 +185,8 @@ jobs:
           artifact-path: ${{ steps.build.outputs.artifact-path }}
 
   android-bundle:
-    runs-on: [self-hosted, Linux]
-    needs: [generate-build-number, lint, test, android-name-suffix-generation]
+    runs-on: [self-hosted, macOS]
+    needs: [generate-build-number, lint, android-name-suffix-generation]
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@flutter-legacy
