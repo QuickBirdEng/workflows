@@ -54,7 +54,8 @@ concurrency:
 
 jobs:
   generate-build-number:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     outputs:
       build-number: ${{ steps.build-number-generator.outputs.build-number }}
     steps:
@@ -66,7 +67,8 @@ jobs:
           echo "Build Number: $build_number"
 
   ios-name-suffix-generation:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
@@ -77,7 +79,8 @@ jobs:
           build-arguments: ${{ inputs.android-build-arguments }}
 
   android-name-suffix-generation:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     if: ${{ github.ref_type == 'tag' }}
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
@@ -89,7 +92,8 @@ jobs:
           build-arguments: ${{ inputs.android-build-arguments }}
 
   lint:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -106,7 +110,8 @@ jobs:
       - run: flutter analyze
 
   test:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -123,7 +128,8 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
 
   static-analysis:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     if: ${{ inputs.static-analysis }}
     defaults:
       run:
