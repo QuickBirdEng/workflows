@@ -29,7 +29,8 @@ concurrency:
 
 jobs:
   lint:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -44,7 +45,8 @@ jobs:
       - run: flutter analyze
 
   test:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -59,7 +61,8 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
 
   test-coverage:
-    runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
+    # runs-on: [self-hosted, Linux]
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -83,7 +86,8 @@ jobs:
         if: ${{ env.CODE_COVERAGE != '' && env.CODE_COVERAGE != 0 }}
 
   slack-update-success:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     needs: [lint, test]
     steps:
       - name: Notify slack
@@ -94,7 +98,8 @@ jobs:
           args: '{\"channel\":\"${{ inputs.slack-channel-id }}\",\"text\":\"${{ inputs.package-name }} successfully released version ${{ github.ref }}\"}'
 
   slack-update-failure:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     if: ${{ failure() }}
     needs: [lint, test]
     steps:

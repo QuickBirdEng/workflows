@@ -21,7 +21,8 @@ concurrency:
 
 jobs:
   lint:
-    runs-on: [self-hosted]
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -36,7 +37,8 @@ jobs:
       - run: flutter analyze
 
   test:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -51,7 +53,8 @@ jobs:
       - run: flutter test --dart-define STAGE=mock
 
   test-coverage:
-    runs-on: [self-hosted, Linux]
+    # runs-on: [self-hosted, Linux]
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
