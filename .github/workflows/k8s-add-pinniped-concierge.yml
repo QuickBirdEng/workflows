@@ -64,6 +64,9 @@ jobs:
       - name: Apply Pinniped Concierge CRDs
         run: |
           kubectl apply -f "https://get.pinniped.dev/v0.38.0/install-pinniped-concierge-crds.yaml"
+      - name: Sleep to allow creds to apply
+        run: |
+          sleep 10
       - name: Apply Pinniped Concierge Resources
         run: |
           kubectl apply -f ${{ inputs.concierge-resources-yaml }}
