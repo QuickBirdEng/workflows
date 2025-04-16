@@ -212,7 +212,7 @@ jobs:
           release-notes: ${{ inputs.ios-build-arguments }}
           submit-for-review: ${{ inputs.submit-ios-build-for-review }}
           build-arguments: ${{ inputs.ios-build-arguments }}
-          obfuscate: true
+          obfuscate: ${{ inputs.obfuscate }}
       - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
