@@ -59,6 +59,10 @@ jobs:
     if: contains('["acpoppe","KlausNie,"kupeliorhun"]', github.triggering_actor)
     needs: deploy-ingress-controller
     steps:
+      - name: Sleep while ingress-nginx starts
+        run: |
+          echo "Sleeping for 60 seconds to allow ingress-nginx to start"
+          sleep 60
       - uses: actions/checkout@v4
         with:
           lfs: ${{ inputs.git-lfs }}
