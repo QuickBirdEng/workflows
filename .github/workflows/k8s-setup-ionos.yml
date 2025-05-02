@@ -1,0 +1,110 @@
+name: K8s OTC Base Setup
+
+on:
+  workflow_call:
+    inputs:
+      load_balancer_ip:
+        description: "IP Address for the load balancer"
+        type: string
+        required: true
+      load_balancer_id:
+        description: "OTC load balancer ID"
+        type: string
+        required: true
+      issuer_yaml:
+        description: "Yaml file describing cluster issuers"
+        type: string
+        required: true
+      storage_class_yaml:
+        description: "Yaml file describing storage class"
+        type: string
+        required: true
+      cluster_policy_yaml:
+        description: "Yaml file describing the Kyverno cluster policy"
+        type: string
+        required: true
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
+  workflow_dispatch:
+
+jobs:
+  deploy-ingress-controller:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","kupeliorhun"]', github.triggering_actor)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.git-lfs }}
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - name: Helm Install Ingress Controller
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+          helm repo update
+
+          helm install ingress-nginx/ingress-nginx -n nginx-ingress-controller --create-namespace --generate-name --set controller.service.loadBalancerIP="${{ inputs.load_balancer_ip }}",controller.service.annotations."kubernetes\.io/elb\.class"=union,controller.service.annotations."kubernetes\.io/elb\.id"="${{ inputs.load_balancer_id }}",controller.service.externalTrafficPolicy="Local",controller.config.enable-ocsp="true","controller.extraArgs.enable-ssl-passthrough="
+
+  deploy-cert-manager:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie,"kupeliorhun"]', github.triggering_actor)
+    needs: deploy-ingress-controller
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.git-lfs }}
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - name: Helm Install Cert Manager
+        run: |
+          helm repo add jetpack https://charts.jetstack.io
+
+          helm repo update
+
+          helm install cert-manager jetpack/cert-manager --version v1.17.0 -n cert-manager --create-namespace --set installCRDs=true
+      - name: Apply Cluster Issuers
+        run: |
+          kubectl apply -f ${{ inputs.issuer_yaml }}
+      - name: Apply Storage Classes
+        run: |
+          kubectl apply -f ${{ inputs.storage_class_yaml }}
+
+  deploy-kyverno:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie,"kupeliorhun"]', github.triggering_actor)
+    needs: deploy-cert-manager
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.git-lfs }}
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - name: Helm Install Kyverno
+        run: |
+          helm upgrade --install kyverno kyverno --namespace kyverno-system --create-namespace --repo https://kyverno.github.io/kyverno/
+      - name: Apply Cluster Policy
+        run: |
+          kubectl apply -f ${{ inputs.cluster_policy_yaml }}
