@@ -39,7 +39,7 @@ jobs:
           fi
       - run: ./gradlew test
   android-build:
-      runs-on: [self-hosted, Linux]
+      runs-on: default-k8s-runner
       needs: [unitTests]
       steps:
         - uses: actions/checkout@v3
