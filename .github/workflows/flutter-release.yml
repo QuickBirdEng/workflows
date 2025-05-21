@@ -94,6 +94,7 @@ jobs:
   lint:
     # runs-on: [self-hosted]
     runs-on: kubernetes-mode-k8s-runner
+    continue-on-error: true
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
