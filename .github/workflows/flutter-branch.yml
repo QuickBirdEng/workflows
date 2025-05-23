@@ -48,7 +48,6 @@ jobs:
   lint:
     # runs-on: [self-hosted]
     runs-on: default-k8s-runner
-    continue-on-error: true
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
