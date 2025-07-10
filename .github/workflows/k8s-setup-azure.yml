@@ -64,7 +64,7 @@ jobs:
 
   deploy-cert-manager:
     runs-on: [ self-hosted, docker ]
-    if: contains('["acpoppe","KlausNie,"kupeliorhun"]', github.triggering_actor)
+    if: contains('["acpoppe","KlausNie,"kupeliorhun", "nasirky"]', github.triggering_actor)
     needs: deploy-ingress-controller
     steps:
       - name: Wait for Ingress Controller to be ready
@@ -106,7 +106,7 @@ jobs:
 
   deploy-kyverno:
     runs-on: [ self-hosted, docker ]
-    if: contains('["acpoppe","KlausNie,"kupeliorhun"]', github.triggering_actor)
+    if: contains('["acpoppe","KlausNie,"kupeliorhun", "nasirky"]', github.triggering_actor)
     needs: deploy-cert-manager
     steps:
       - uses: actions/checkout@v4
