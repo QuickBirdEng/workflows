@@ -55,7 +55,7 @@ concurrency:
 jobs:
   generate-build-number:
     # runs-on: [self-hosted]
-    runs-on: kubernetes-mode-k8s-runner
+    runs-on: default-k8s-runner
     outputs:
       build-number: ${{ steps.build-number-generator.outputs.build-number }}
     steps:
@@ -68,7 +68,7 @@ jobs:
 
   ios-name-suffix-generation:
     # runs-on: [self-hosted]
-    runs-on: kubernetes-mode-k8s-runner
+    runs-on: default-k8s-runner
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
     steps:
@@ -80,7 +80,7 @@ jobs:
 
   android-name-suffix-generation:
     # runs-on: [self-hosted]
-    runs-on: kubernetes-mode-k8s-runner
+    runs-on: default-k8s-runner
     if: ${{ github.ref_type == 'tag' }}
     outputs:
       name-suffix: ${{ steps.name-suffix-generator.outputs.name-suffix }}
@@ -93,7 +93,7 @@ jobs:
 
   lint:
     # runs-on: [self-hosted]
-    runs-on: kubernetes-mode-k8s-runner
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -111,7 +111,7 @@ jobs:
 
   test:
     # runs-on: [self-hosted, Linux]
-    runs-on: kubernetes-mode-k8s-runner
+    runs-on: default-k8s-runner
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -129,7 +129,7 @@ jobs:
 
   static-analysis:
     # runs-on: [self-hosted, Linux]
-    runs-on: kubernetes-mode-k8s-runner
+    runs-on: default-k8s-runner
     if: ${{ inputs.static-analysis }}
     defaults:
       run:
