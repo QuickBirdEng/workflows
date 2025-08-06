@@ -52,7 +52,7 @@ jobs:
 
           helm repo update
 
-          helm install ingress-nginx/ingress-nginx -n nginx-ingress-controller --create-namespace --generate-name --set controller.service.loadBalancerIP="${{ inputs.load_balancer_ip }}",controller.service.annotations."kubernetes\.io/elb\.class"=union,controller.service.annotations."kubernetes\.io/elb\.id"="${{ inputs.load_balancer_id }}",controller.service.externalTrafficPolicy="Local",controller.config.enable-ocsp="true","controller.extraArgs.enable-ssl-passthrough="
+          helm install ingress-nginx ingress-nginx/ingress-nginx -n nginx-ingress-controller --create-namespace --set controller.service.loadBalancerIP="${{ inputs.load_balancer_ip }}",controller.service.annotations."kubernetes\.io/elb\.class"=union,controller.service.annotations."kubernetes\.io/elb\.id"="${{ inputs.load_balancer_id }}",controller.service.externalTrafficPolicy="Local",controller.config.enable-ocsp="true","controller.extraArgs.enable-ssl-passthrough="
 
   deploy-cert-manager:
     runs-on: [self-hosted, docker]
