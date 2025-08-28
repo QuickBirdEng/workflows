@@ -39,6 +39,9 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
           context: ${{ secrets.KUBE_CONTEXT }}
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
 
       - name: Helm Install Ingress Controller
         run: |
