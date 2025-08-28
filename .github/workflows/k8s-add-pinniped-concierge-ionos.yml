@@ -3,6 +3,10 @@ name: K8s Create Service Mesh
 on:
   workflow_call:
     inputs:
+      load_balancer_ip:
+        description: "IP Address for the load balancer"
+        type: string
+        required: true
       concierge-resources-yaml:
         description: "Yaml file describing the resources to deploy for Pinniped Concierge"
         type: string
