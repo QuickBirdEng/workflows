@@ -43,7 +43,7 @@ jobs:
         with:
           version: "3.13.3"
 
-      - name: Helm Install Ingress Controller
+      - name: Helm Install Contour
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami 
 
