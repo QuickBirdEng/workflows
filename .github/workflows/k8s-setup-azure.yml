@@ -60,7 +60,6 @@ jobs:
             --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-public-ip-address-name"="${{ inputs.public_ip_name }}" \
             --set controller.service.externalTrafficPolicy="Local" \
             --set controller.config.enable-ocsp="true" \
-            --set controller.extraArgs.enable-ssl-passthrough="true"
 
   deploy-cert-manager:
     runs-on: [ self-hosted, docker ]

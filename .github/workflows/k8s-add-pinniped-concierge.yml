@@ -11,8 +11,8 @@ on:
         description: "Yaml file describing the JWT authenticator used by Pinniped Concierge"
         type: string
         required: true
-      concierge-ingress-yaml:
-        description: "Yaml file describing the Ingress for the Pinniped Concierge imposter URL"
+      concierge-http-proxy-yaml:
+        description: "Yaml file describing the HTTP Proxy for the Pinniped Concierge imposter URL"
         type: string
         required: true
       concierge-impersonator-url:
@@ -40,6 +40,14 @@ jobs:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
           context: ${{ secrets.KUBE_CONTEXT }}
 
+      - name: Helm Install Ingress Controller
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami 
+
+          helm repo update
+
+          helm install contour bitnami/contour --namespace contour --create-namespace   
+
       - name: Replace unique workload ID (must be unique among clusters)
         uses: richardrigutins/replace-in-files@v2
         with:
@@ -54,10 +62,10 @@ jobs:
           search-text: '<PINNIPED_IMPERSONATOR_URL>'
           replacement-text: ${{ inputs.concierge-impersonator-url }}
 
-      - name: Replace Impersonator URL in ingress
+      - name: Replace Impersonator URL in HTTP Proxy
         uses: richardrigutins/replace-in-files@v2
         with:
-          files: ${{ inputs.concierge-ingress-yaml }}
+          files: ${{ inputs.concierge-http-proxy-yaml }}
           search-text: '<PINNIPED_IMPERSONATOR_URL>'
           replacement-text: ${{ inputs.concierge-impersonator-url }}
 
@@ -73,7 +81,7 @@ jobs:
       - name: Apply Pinniped JWT Authenticator
         run: |
           kubectl apply -f ${{ inputs.jwt-authenticator-yaml }}
-      - name: Apply Pinniped Concierge Ingress
+      - name: Apply Pinniped Concierge HTTP Proxy
         run: |
-          kubectl apply -f ${{ inputs.concierge-ingress-yaml }}
+          kubectl apply -f ${{ inputs.concierge-http-proxy-yaml }}
 
