@@ -42,18 +42,6 @@ on:
         description: "Access Key ID for the S3 compatible storage"
         type: string
         required: true
-      S3_ACCESS_KEY_SECRET:
-        description: "Access Key Secret for the S3 compatible storage"
-        type: string
-        required: true
-      S3_ENDPOINT:
-        description: "Endpoint URL for the S3 compatible storage"
-        type: string
-        required: false
-      RESTIC_REPOSITORY_PASSWORD:
-        description: "Password for the restic repository"
-        type: string
-        required: true
       git-lfs:
         description: "Checkout the project with git lfs"
         type: boolean
@@ -90,8 +78,8 @@ jobs:
       - name: Create S3 Secret
         run: |
           kubectl create secret generic s3-credentials -n k8up \
-          --from-literal=access-key-id="${{ inputs.S3_ACCESS_KEY_ID }}" \
-          --from-literal=access-key-secret="${{ inputs.S3_ACCESS_KEY_SECRET }}"
+          --from-literal=access-key-id="${{ secrets.S3_ACCESS_KEY_ID }}" \
+          --from-literal=access-key-secret="${{ secrets.S3_ACCESS_KEY_SECRET }}"
 
       - name: Remove restic secret if it exists
         run: |
@@ -99,7 +87,7 @@ jobs:
       - name: Create restic secret
         run: |
           kubectl create secret generic restic-repo -n k8up \
-          --from-literal=password="${{ inputs.RESTIC_REPOSITORY_PASSWORD }}" \
+          --from-literal=password="${{ secrets.RESTIC_REPOSITORY_PASSWORD }}" \
 
       - name: Apply backup schedule with appropriate information
         run: |
