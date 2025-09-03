@@ -98,6 +98,18 @@ jobs:
                 - create
                 - patch
                 - delete
+            - apiGroups: ["batch"]
+              resources:
+                - jobs
+                - cronjobs
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+                - create
+                - patch
+                - delete
           EOF
       - name: Create role binding
         run: |
