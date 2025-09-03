@@ -93,7 +93,7 @@ jobs:
       - name: Apply backup schedule with appropriate information
         run: |
           cat <<EOF | kubectl apply -f -
-          apiVersion: k8up.io/v1beta1
+          apiVersion: k8up.io/v1
           kind: Schedule
           metadata:
             name: backup-schedule
