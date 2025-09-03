@@ -121,7 +121,7 @@ jobs:
             prune:
               schedule: "${{ inputs.prune_schedule }}"
               retention:
-                keepLast: "${{ inputs.prune_keep_last }}"
-                keepDaily: "${{ inputs.prune_keep_daily }}"
-                keepMonthly: "${{ inputs.prune_keep_monthly }}"
+                keepLast: ${{ inputs.prune_keep_last }}
+                keepDaily: ${{ inputs.prune_keep_daily }}
+                keepMonthly: ${{ inputs.prune_keep_monthly }}
           EOF
