@@ -21,15 +21,15 @@ on:
         required: true
       prune_keep_last:
         description: "Number of last backups to keep during prune"
-        type: number
+        type: string
         required: true
       prune_keep_daily:
         description: "Number of daily backups to keep during prune"
-        type: number
+        type: string
         required: true
       prune_keep_monthly:
         description: "Number of monthly backups to keep during prune"
-        type: number
+        type: string
         required: true
       S3_BUCKET_NAME:
         description: "Name of the S3 bucket to use for backups"
