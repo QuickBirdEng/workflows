@@ -103,16 +103,15 @@ jobs:
               s3:
                 bucket: "${{ inputs.S3_BUCKET_NAME }}"
                 endpoint: "${{ inputs.S3_ENDPOINT }}"
-                credentialsSecret:
-                  accessKeyIDSecretRef:
-                    name: s3-credentials
-                    key: access-key-id
-                  secretAccessKeySecretRef:
+                accessKeyIDSecretRef:
+                  name: s3-credentials
+                  key: access-key-id
+                secretAccessKeySecretRef:
                     name: s3-credentials
                     key: access-key-secret
-                repoPasswordSecretRef:
-                  name: restic-repo
-                  key: password
+              repoPasswordSecretRef:
+                name: restic-repo
+                key: password
             backup:
               schedule: "${{ inputs.backup_schedule }}"
               failedJobsHistoryLimit: 2
