@@ -14,26 +14,23 @@ on:
       prune_schedule:
         description: "Cron schedule for pruning (in cron format)"
         type: string
-        required: false
+        required: true
       check_schedule:
         description: "Cron schedule for repository checks (in cron format)"
         type: string
-        required: false
+        required: true
       prune_keep_last:
         description: "Number of last backups to keep during prune"
         type: number
-        required: false
-        default: 5
+        required: true
       prune_keep_daily:
         description: "Number of daily backups to keep during prune"
         type: number
-        required: false
-        default: 14
+        required: true
       prune_keep_monthly:
         description: "Number of monthly backups to keep during prune"
         type: number
-        required: false
-        default: 2
+        required: true
       S3_BUCKET_NAME:
         description: "Name of the S3 bucket to use for backups"
         type: string
@@ -41,7 +38,7 @@ on:
       S3_ENDPOINT:
         description: "Endpoint URL for the S3 compatible storage"
         type: string
-        required: false
+        required: true
       git-lfs:
         description: "Checkout the project with git lfs"
         type: boolean
