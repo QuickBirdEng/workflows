@@ -1,0 +1,139 @@
+name: K8s Create K8up Backups
+
+on:
+  workflow_call:
+    inputs:
+      namespace:
+        description: "Namespace to create and add a service account to"
+        type: string
+        required: true
+      backup_schedule:
+        description: "Cron schedule for backups (in cron format)"
+        type: string
+        required: true
+      prune_schedule:
+        description: "Cron schedule for pruning (in cron format)"
+        type: string
+        required: false
+      check_schedule:
+        description: "Cron schedule for repository checks (in cron format)"
+        type: string
+        required: false
+      prune_keep_last:
+        description: "Number of last backups to keep during prune"
+        type: number
+        required: false
+        default: 5
+      prune_keep_daily:
+        description: "Number of daily backups to keep during prune"
+        type: number
+        required: false
+        default: 14
+      prune_keep_monthly:
+        description: "Number of monthly backups to keep during prune"
+        type: number
+        required: false
+        default: 2
+      S3_BUCKET_NAME:
+        description: "Name of the S3 bucket to use for backups"
+        type: string
+        required: true
+      S3_ACCESS_KEY_ID:
+        description: "Access Key ID for the S3 compatible storage"
+        type: string
+        required: true
+      S3_ACCESS_KEY_SECRET:
+        description: "Access Key Secret for the S3 compatible storage"
+        type: string
+        required: true
+      S3_ENDPOINT:
+        description: "Endpoint URL for the S3 compatible storage"
+        type: string
+        required: false
+      RESTIC_REPOSITORY_PASSWORD:
+        description: "Password for the restic repository"
+        type: string
+        required: true
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
+  workflow_dispatch:
+
+jobs:
+  k8s-setup-app:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","kupeliorhun","nasirky"]', github.triggering_actor)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.git-lfs }}
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+
+      - name: Helm Install Contour
+        run: |
+          helm repo add k8up-io https://k8up-io.github.io/k8up
+          helm repo update
+          helm install k8up k8up-io/k8up --namespace k8up --create-namespace
+
+      - name: Remove S3 Secret if it exists
+        run: |
+          kubectl delete secret s3-credentials -n k8up || echo "Secret does not exist, continuing..."
+      - name: Create S3 Secret
+        run: |
+          kubectl create secret generic s3-credentials -n k8up \
+          --from-literal=access-key-id="${{ inputs.S3_ACCESS_KEY_ID }}" \
+          --from-literal=access-key-secret="${{ inputs.S3_ACCESS_KEY_SECRET }}"
+
+      - name: Remove restic secret if it exists
+        run: |
+          kubectl delete secret restic-repo -n k8up || echo "Secret does not exist, continuing..."
+      - name: Create restic secret
+        run: |
+          kubectl create secret generic restic-repo -n k8up \
+          --from-literal=password="${{ inputs.RESTIC_REPOSITORY_PASSWORD }}" \
+
+      - name: Apply backup schedule with appropriate information
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: k8up.io/v1beta1
+          kind: Schedule
+          metadata:
+            name: backup-schedule
+            namespace: ${{ inputs.namespace }}
+          spec:
+            backend:
+              s3:
+                bucket: "${{ inputs.S3_BUCKET_NAME }}"
+                endpoint: "${{ inputs.S3_ENDPOINT }}"
+                credentialsSecret:
+                  accessKeyIDSecretRef:
+                    name: s3-credentials
+                    key: access-key-id
+                  secretAccessKeySecretRef:
+                    name: s3-credentials
+                    key: access-key-secret
+                repoPasswordSecretRef:
+                  name: restic-repo
+                  key: password
+            backup:
+              schedule: "${{ inputs.backup_schedule }}"
+              failedJobsHistoryLimit: 2
+              successfulJobsHistoryLimit: 2
+            check:
+              schedule: "${{ inputs.check_schedule }}"
+            prune:
+              schedule: "${{ inputs.prune_schedule }}"
+              retention:
+                keepLast: "${{ inputs.prune_keep_last }}"
+                keepDaily: "${{ inputs.prune_keep_daily }}"
+                keepMonthly: "${{ inputs.prune_keep_monthly }}"
+          EOF
