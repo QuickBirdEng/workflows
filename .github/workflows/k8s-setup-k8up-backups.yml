@@ -38,10 +38,10 @@ on:
         description: "Name of the S3 bucket to use for backups"
         type: string
         required: true
-      S3_ACCESS_KEY_ID:
-        description: "Access Key ID for the S3 compatible storage"
+      S3_ENDPOINT:
+        description: "Endpoint URL for the S3 compatible storage"
         type: string
-        required: true
+        required: false
       git-lfs:
         description: "Checkout the project with git lfs"
         type: boolean
