@@ -75,19 +75,19 @@ jobs:
 
       - name: Remove S3 Secret if it exists
         run: |
-          kubectl delete secret s3-credentials -n k8up || echo "Secret does not exist, continuing..."
+          kubectl delete secret s3-credentials -n "${{ inputs.namespace }}" || echo "Secret does not exist, continuing..."
       - name: Create S3 Secret
         run: |
-          kubectl create secret generic s3-credentials -n k8up \
+          kubectl create secret generic s3-credentials -n "${{ inputs.namespace }}" \
           --from-literal=access-key-id="${{ secrets.S3_ACCESS_KEY_ID }}" \
           --from-literal=access-key-secret="${{ secrets.S3_ACCESS_KEY_SECRET }}"
 
       - name: Remove restic secret if it exists
         run: |
-          kubectl delete secret restic-repo -n k8up || echo "Secret does not exist, continuing..."
+          kubectl delete secret restic-repo -n "${{ inputs.namespace }}" || echo "Secret does not exist, continuing..."
       - name: Create restic secret
         run: |
-          kubectl create secret generic restic-repo -n k8up \
+          kubectl create secret generic restic-repo -n "${{ inputs.namespace }}" \
           --from-literal=password="${{ secrets.RESTIC_REPOSITORY_PASSWORD }}" \
 
       - name: Apply backup schedule with appropriate information
