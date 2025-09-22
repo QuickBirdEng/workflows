@@ -91,11 +91,14 @@ jobs:
     needs: [lint, test]
     steps:
       - name: Notify slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: pullreminders/slack-action@master
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          args: '{\"channel\":\"${{ inputs.slack-channel-id }}\",\"text\":\"${{ inputs.package-name }} successfully released version ${{ github.ref }}\"}'
+          errors: true
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }} 
+          payload: | 
+            "channel": "${{ inputs.slack-channel-id }}"
+            "text": "${{ inputs.package-name }} successfully released version ${{ github.ref }}"
 
   slack-update-failure:
     # runs-on: [self-hosted, Linux]
@@ -104,8 +107,11 @@ jobs:
     needs: [lint, test]
     steps:
       - name: Notify slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: pullreminders/slack-action@master
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          args: '{\"channel\":\"${{ inputs.slack-channel-id }}\",\"text\":\"${{ inputs.package-name }} failed to release version ${{ github.ref }}\"}'
+          errors: true
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: | 
+            "channel": "${{ inputs.slack-channel-id }}"
+            "text": "${{ inputs.package-name }} failed to release version ${{ github.ref }}"
