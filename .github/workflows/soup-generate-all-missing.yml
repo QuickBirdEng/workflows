@@ -1,0 +1,20 @@
+name: SOUP - Generate all Missing
+env:
+    GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
+
+on:
+  workflow_call:
+jobs:
+  generate-missing:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - name: Generate All Missing SOUPs
+        uses: QuickBirdEng/actions/soup-generate-all-missing@main
+        with:
+          repository: ${{ github.event.repository.name }}
+          gh-api-token: ${{ env.GH_API_TOKEN }}
+          soup-approvers: ${{ vars.SOUP_APPROVERS }}
+          base-branch: origin/${{ github.event.pull_request.base.ref || 'main' }}
