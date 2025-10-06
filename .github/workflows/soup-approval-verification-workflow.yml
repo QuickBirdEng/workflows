@@ -1,0 +1,209 @@
+name: SOUP - Approval (Verification)
+on:
+  workflow_call:
+
+jobs:
+  verify-and-update-approval:
+    if: github.event.review.state == 'approved'
+    runs-on: [self-hosted, Linux]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - name: Checkout pull request branch
+        shell: bash
+        run: |
+          BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+          HEAD_BRANCH="${{ github.event.pull_request.head.ref }}"
+          
+          echo "Base branch: $BASE_BRANCH"
+          echo "Head branch: $HEAD_BRANCH"
+
+          git fetch origin "$BASE_BRANCH":"refs/remotes/origin/$BASE_BRANCH" --depth=1 --force
+          git fetch origin "$HEAD_BRANCH":"refs/remotes/origin/$HEAD_BRANCH" --depth=1 --force
+
+          git checkout -B "$HEAD_BRANCH" "origin/$HEAD_BRANCH"
+
+          git pull --rebase
+          echo "BASE_BRANCH=$BASE_BRANCH" >> "$GITHUB_ENV"
+      - name: Fetch changed SOUP files
+        id: fetch-soup-files
+        shell: bash
+        run: |
+          JSON_FILES=$(git diff --name-only --diff-filter=AM "origin/$BASE_BRANCH" -- soups/**/*.json || true)
+          if [ -z "$JSON_FILES" ]; then
+            echo "::error::No JSON files changed in this PR"
+            exit 1
+          fi
+
+          echo "Found JSON files in PR: $JSON_FILES"
+          {
+            echo "SOUP_FILES<<EOF"
+            echo "$JSON_FILES"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+      - name: Verification - Requirements
+        run: |
+          STATUS=0
+
+          MAGENTA="\033[95m"
+          CYAN="\033[96m"
+          RESET="\033[0m"
+
+          echo -e "${MAGENTA}Requirements:${RESET}"
+          
+          FIRST=0
+
+          for FILE in $SOUP_FILES; do
+            if [ $FIRST -eq 0 ]; then
+              jq -r '
+                .requirements
+                | to_entries[]
+                | "\(.key): \(.value.description)"
+              ' "$FILE" | sort -u | while IFS= read -r line; do
+                echo -e "${CYAN}${line}${RESET}"
+              done
+              FIRST=1
+            fi
+
+            INVALID=$(jq -r '
+              .requirements
+              | to_entries
+              | map(
+                  select(
+                    (.value.fulfilled != true)
+                    and
+                    ((.value.reason_if_requirement_not_fulfilled | tostring) == "")
+                  )
+                )
+              | .[].key
+            ' "$FILE")
+
+            if [ -n "$INVALID" ]; then
+              INVALID_LIST=$(echo "$INVALID" | tr '\n' ',' | sed 's/,$//')
+              echo "::error::❌ $FILE -> $INVALID_LIST"
+              STATUS=1
+            else
+              echo "✅ $FILE -> All requirements are either fulfilled or there is a valid reason if not fulfilled."
+            fi
+          done
+
+          if [ $STATUS -ne 0 ]; then
+            echo "::error::⚠️ One or more files have invalid requirement statuses. See above for details."
+            exit $STATUS
+          else
+            echo "All changed files have valid requirement statuses."
+          fi
+      - name: Verification - Version (Vulnerability)
+        shell: bash
+        run: |
+          SUCCESS_FILES=()
+          FAILED_FILES=()
+          STATUS=1
+
+          for FILE in $SOUP_FILES; do
+            CONDITION=$(jq -r '.metadata.approval.condition // empty' "$FILE")
+            VERSION=$(jq -r '.metadata.input_version // empty' "$FILE")
+
+            if [ -z "$CONDITION" ]; then
+              echo "No condition set in $FILE, skipping version check"
+              SUCCESS_FILES+=("$FILE")
+              continue
+            fi
+
+            CONDITION_STRIPPED=$(echo "$CONDITION" | sed 's/-.*//')
+            echo "Checking condition in $FILE: required version >= $CONDITION (stripped: $CONDITION_STRIPPED), provided $VERSION"
+
+            if [[ "$CONDITION_STRIPPED" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]; then
+              greater=$(printf "%s\n%s\n" "$CONDITION_STRIPPED" "$VERSION" | sort -V | tail -n1)
+              if [ "$greater" == "$VERSION" ]; then
+                STATUS=0
+              fi
+
+            elif [[ "$CONDITION_STRIPPED" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+              if (( $(echo "$VERSION > $CONDITION_STRIPPED" | bc -l) )); then
+                STATUS=0
+              fi
+
+            else
+              STATUS=1
+            fi
+
+            if [ "$STATUS" -eq 0 ]; then
+              echo "✅ Version check passed for $FILE"
+              SUCCESS_FILES+=("$FILE")
+            else
+              echo "❌ Version check FAILED for $FILE"
+              FAILED_FILES+=("$FIULE")
+            fi
+
+          done
+
+          echo "✅ Passed files (${#SUCCESS_FILES[@]}): ${SUCCESS_FILES[*]:-None}"
+          echo "❌ Failed files (${#FAILED_FILES[@]}): ${FAILED_FILES[*]:-None}"
+
+          if [ ${#FAILED_FILES[@]} -ne 0 ]; then
+            echo "::error::❌ One or more SOUPs did not meet the version condition."
+            echo "::error::❌ Failed files: ${FAILED_FILES[*]:-None}"
+            exit 1
+          fi
+      - name: Update approval information
+        shell: bash
+        env:
+          ALLOWED_APPROVERS: ${{ vars.SOUP_APPROVERS }}
+        run: |
+          APPROVED_BY="${{ github.event.review.user.login }}"
+
+          if [ -n "$ALLOWED_APPROVERS" ]; then
+            echo "Checking if $APPROVED_BY is in allowed approvers list..."
+
+            IFS=',' read -ra APPROVER_LIST <<< "$ALLOWED_APPROVERS"
+            APPROVER_FOUND=false
+
+            for approver in "${APPROVER_LIST[@]}"; do
+              if [ "$(echo "$approver" | xargs)" = "$APPROVED_BY" ]; then
+                APPROVER_FOUND=true
+                break
+              fi
+            done
+
+            if [ "$APPROVER_FOUND" = false ]; then
+              echo "❌ $APPROVED_BY is not in the allowed approvers list: $ALLOWED_APPROVERS"
+              echo "Approval will not be recorded."
+              exit 0
+            fi
+
+            echo "✅ $APPROVED_BY is authorized to approve soups"
+          else
+            echo "⚠️  No ALLOWED_APPROVERS configured - allowing all approvals"
+          fi
+
+          APPROVED_ON=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          for FILE in $JSON_FILES; do
+            if [ ! -f "$FILE" ]; then
+              echo "File $FILE not found, skipping"
+              continue
+            fi
+
+            jq --arg approved_by "$APPROVED_BY" --arg approved_on "$APPROVED_ON" \
+               '.metadata.approval.by = $approved_by | .metadata.approval.date = $approved_on' \
+               "$FILE" > "${FILE}.tmp" && mv "${FILE}.tmp" "$FILE"
+
+            echo "Updated approval info in $FILE"
+          done
+
+      - name: Commit approval updates
+        shell: bash
+        run: |
+          git config --local user.email "soup-approver@quickbird.io"
+          git config --local user.name "SOUP Approver"
+
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git add soups/*.json
+          git commit -m "Update approval information: approved by ${{ github.event.review.user.login }}"
+          git push origin HEAD
