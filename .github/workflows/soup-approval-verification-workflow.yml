@@ -30,10 +30,10 @@ jobs:
         id: fetch-soup-files
         shell: bash
         run: |
-          JSON_FILES=$(git diff --name-only --diff-filter=AM "origin/$BASE_BRANCH" -- soups/**/*.json || true)
+          JSON_FILES=$(git diff --name-only --diff-filter=AM "origin/$BASE_BRANCH" -- .soups/**/*.json || true)
           if [ -z "$JSON_FILES" ]; then
-            echo "::error::No JSON files changed in this PR"
-            exit 1
+            echo "No JSON files changed in this PR"
+            exit 0
           fi
 
           echo "Found JSON files in PR: $JSON_FILES"
@@ -168,9 +168,9 @@ jobs:
             done
 
             if [ "$APPROVER_FOUND" = false ]; then
-              echo "❌ $APPROVED_BY is not in the allowed approvers list: $ALLOWED_APPROVERS"
+              echo "::error::❌ $APPROVED_BY is not in the allowed approvers list: $ALLOWED_APPROVERS"
               echo "Approval will not be recorded."
-              exit 0
+              exit 1
             fi
 
             echo "✅ $APPROVED_BY is authorized to approve soups"
@@ -180,7 +180,7 @@ jobs:
 
           APPROVED_ON=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          for FILE in $JSON_FILES; do
+          for FILE in $SOUP_FILES; do
             if [ ! -f "$FILE" ]; then
               echo "File $FILE not found, skipping"
               continue
@@ -204,6 +204,6 @@ jobs:
             exit 0
           fi
 
-          git add soups/*.json
+          git add .soups/*.json
           git commit -m "Update approval information: approved by ${{ github.event.review.user.login }}"
           git push origin HEAD
