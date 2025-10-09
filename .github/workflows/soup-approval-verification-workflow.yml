@@ -33,9 +33,12 @@ jobs:
           JSON_FILES=$(git diff --name-only --diff-filter=AM "origin/$BASE_BRANCH" -- .soups/**/*.json || true)
           if [ -z "$JSON_FILES" ]; then
             echo "No JSON files changed in this PR"
+
+            echo "skip-remaining-steps=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
+        
+          echo "skip-remaining-steps=false" >> "$GITHUB_OUTPUT"
           echo "Found JSON files in PR: $JSON_FILES"
           {
             echo "SOUP_FILES<<EOF"
@@ -43,6 +46,7 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_ENV"
       - name: Verification - Requirements
+        if: steps.fetch-soup-files.outputs.skip-remaining-steps == 'false'
         run: |
           STATUS=0
 
@@ -95,6 +99,7 @@ jobs:
             echo "All changed files have valid requirement statuses."
           fi
       - name: Verification - Version (Vulnerability)
+        if: steps.fetch-soup-files.outputs.skip-remaining-steps == 'false'
         shell: bash
         run: |
           SUCCESS_FILES=()
@@ -148,6 +153,7 @@ jobs:
             exit 1
           fi
       - name: Update approval information
+        if: steps.fetch-soup-files.outputs.skip-remaining-steps == 'false'
         shell: bash
         env:
           ALLOWED_APPROVERS: ${{ vars.SOUP_APPROVERS }}
@@ -194,6 +200,7 @@ jobs:
           done
 
       - name: Commit approval updates
+        if: steps.fetch-soup-files.outputs.skip-remaining-steps == 'false'
         shell: bash
         run: |
           git config --local user.email "soup-approver@quickbird.io"
