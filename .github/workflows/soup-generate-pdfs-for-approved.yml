@@ -1,0 +1,12 @@
+name: SOUP - Generate PDF for Approved SOUPs
+
+on:
+  workflow_call:
+jobs:
+  reports:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/soup-generate-pdf-for-approved@main
