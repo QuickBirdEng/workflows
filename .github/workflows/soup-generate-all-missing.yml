@@ -17,4 +17,3 @@ jobs:
           repository: ${{ github.event.repository.name }}
           gh-api-token: ${{ env.GH_API_TOKEN }}
           soup-approvers: ${{ vars.SOUP_APPROVERS }}
-          base-branch: origin/${{ github.event.pull_request.base.ref || 'main' }}

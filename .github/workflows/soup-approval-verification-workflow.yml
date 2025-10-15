@@ -192,6 +192,12 @@ jobs:
               continue
             fi
 
+            if jq -e '.metadata.approval.by != null and .metadata.approval.by != "" and
+                      .metadata.approval.date != null and .metadata.approval.date != ""' "$FILE" > /dev/null; then            
+              echo "$FILE already has approval info filled"
+              continue
+            fi
+
             jq --arg approved_by "$APPROVED_BY" --arg approved_on "$APPROVED_ON" \
                '.metadata.approval.by = $approved_by | .metadata.approval.date = $approved_on' \
                "$FILE" > "${FILE}.tmp" && mv "${FILE}.tmp" "$FILE"
