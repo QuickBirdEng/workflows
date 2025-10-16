@@ -1,4 +1,7 @@
 name: SOUP - Approval (Verification)
+env:
+    GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
+
 on:
   workflow_call:
 
@@ -198,11 +201,17 @@ jobs:
               continue
             fi
 
-            jq --arg approved_by "$APPROVED_BY" --arg approved_on "$APPROVED_ON" \
+            APPROVER_INFO=$(curl -s -H "Authorization: Bearer $GH_API_TOKEN" "https://api.github.com/users/$APPROVED_BY")
+            APPROVER_NAME=$(echo "$APPROVER_INFO" | jq -r '.name // empty')
+            if [ -z "$APPROVER_NAME" ]; then
+              APPROVER_NAME="$APPROVED_BY"
+            fi
+
+            jq --arg approved_by "$APPROVER_NAME" --arg approved_on "$APPROVED_ON" \
                '.metadata.approval.by = $approved_by | .metadata.approval.date = $approved_on' \
                "$FILE" > "${FILE}.tmp" && mv "${FILE}.tmp" "$FILE"
 
-            echo "Updated approval info in $FILE"
+            echo "$FILE -> Approved by $APPROVER_NAME on $APPROVED_ON"
           done
 
       - name: Commit approval updates
