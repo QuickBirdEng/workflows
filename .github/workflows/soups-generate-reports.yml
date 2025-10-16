@@ -1,0 +1,18 @@
+name: SOUP - Generate Reports optionally including PDFs
+
+on:
+  workflow_call:
+    inputs:
+      generate-pdfs:
+        description: 'Set to true to generate PDFs for approved SOUPs'
+        type: boolean
+jobs:
+  reports:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - uses: QuickBirdEng/actions/soups-generate-reports@main
+        with:
+          generate-pdfs: ${{ inputs.generate-pdfs }}
