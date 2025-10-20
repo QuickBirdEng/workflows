@@ -11,6 +11,8 @@ jobs:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+      - shell: bash
+        run: git clean -ffdx
       - name: Generate All Missing SOUPs
         uses: QuickBirdEng/actions/soup-generate-all-missing@main
         with:

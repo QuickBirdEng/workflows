@@ -161,30 +161,46 @@ jobs:
         env:
           ALLOWED_APPROVERS: ${{ vars.SOUP_APPROVERS }}
         run: |
-          APPROVED_BY="${{ github.event.review.user.login }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          echo "Fetching all approvers for PR #$PR_NUMBER in $REPO..."
+
+          ALL_APPROVERS=$(curl -s -H "Authorization: Bearer $GH_API_TOKEN" \
+            "https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/reviews" \
+            | jq -r '.[] | select(.state == "APPROVED") | .user.login' | sort -u)
+
+          if [ -z "$ALL_APPROVERS" ]; then
+            echo "::warning::No approvals found yet for PR #$PR_NUMBER"
+            exit 1
+          fi
+
+          echo "Found approvers: $ALL_APPROVERS"
 
           if [ -n "$ALLOWED_APPROVERS" ]; then
-            echo "Checking if $APPROVED_BY is in allowed approvers list..."
+            echo "Checking allowed approvers list: $ALLOWED_APPROVERS"
 
             IFS=',' read -ra APPROVER_LIST <<< "$ALLOWED_APPROVERS"
-            APPROVER_FOUND=false
 
-            for approver in "${APPROVER_LIST[@]}"; do
-              if [ "$(echo "$approver" | xargs)" = "$APPROVED_BY" ]; then
-                APPROVER_FOUND=true
-                break
-              fi
+            AUTHORIZED_APPROVERS=()
+            for approver in $ALL_APPROVERS; do
+              for allowed in "${APPROVER_LIST[@]}"; do
+                if [ "$(echo "$allowed" | xargs)" = "$approver" ]; then
+                  AUTHORIZED_APPROVERS+=("$approver")
+                fi
+              done
             done
 
-            if [ "$APPROVER_FOUND" = false ]; then
-              echo "::error::❌ $APPROVED_BY is not in the allowed approvers list: $ALLOWED_APPROVERS"
+            if [ ${#AUTHORIZED_APPROVERS[@]} -eq 0 ]; then
+              echo "::error::❌ None of the approvers ($ALL_APPROVERS) are in the allowed list: $ALLOWED_APPROVERS"
               echo "Approval will not be recorded."
               exit 1
             fi
 
-            echo "✅ $APPROVED_BY is authorized to approve soups"
+            echo "✅ Authorized approvers found: ${AUTHORIZED_APPROVERS[*]}"
           else
             echo "⚠️  No ALLOWED_APPROVERS configured - allowing all approvals"
+            AUTHORIZED_APPROVERS=($ALL_APPROVERS)
           fi
 
           APPROVED_ON=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -201,7 +217,10 @@ jobs:
               continue
             fi
 
-            APPROVER_INFO=$(curl -s -H "Authorization: Bearer $GH_API_TOKEN" "https://api.github.com/users/$APPROVED_BY")
+            APPROVED_BY="${AUTHORIZED_APPROVERS[0]}"
+
+            APPROVER_INFO=$(curl -s -H "Authorization: Bearer $GH_API_TOKEN" \
+              "https://api.github.com/users/$APPROVED_BY")
             APPROVER_NAME=$(echo "$APPROVER_INFO" | jq -r '.name // empty')
             if [ -z "$APPROVER_NAME" ]; then
               APPROVER_NAME="$APPROVED_BY"
