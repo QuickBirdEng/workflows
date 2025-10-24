@@ -108,6 +108,8 @@ jobs:
           context: ${{ secrets.KUBE_CONTEXT }}
       - name: Helm Install Kyverno
         run: |
+          helm repo update
+
           helm upgrade --install kyverno kyverno --namespace kyverno-system --create-namespace --repo https://kyverno.github.io/kyverno/
       - name: Apply Cluster Policy
         run: |
