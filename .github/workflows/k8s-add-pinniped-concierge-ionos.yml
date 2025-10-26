@@ -49,11 +49,7 @@ jobs:
 
       - name: Helm Install Contour
         run: |
-          helm repo add bitnami https://charts.bitnami.com/bitnami 
-
-          helm repo update
-
-          helm install contour bitnami/contour --namespace contour --create-namespace   
+          kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
 
       - name: Replace unique workload ID (must be unique among clusters)
         uses: richardrigutins/replace-in-files@v2
