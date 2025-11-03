@@ -54,10 +54,15 @@ jobs:
 
           helm upgrade --install haproxy-kubernetes-ingress haproxytech/kubernetes-ingress --create-namespace --namespace haproxy-controller -f - <<EOF
           controller:
+            logging:
+              traffic:
+                address: stdout
+                level: info
+                facility: daemon
             service:
               annotations:
                 kubernetes.io/elb.class: union
-                kuberenetes.io/elb.id: ${{ inputs.load_balancer_id }}
+                kubernetes.io/elb.id: ${{ inputs.load_balancer_id }}
               type: LoadBalancer
               loadBalancerIP: ${{ inputs.load_balancer_ip }}
               externalTrafficPolicy: Local
@@ -84,9 +89,6 @@ jobs:
               ssl_default_bind_options: no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets
               ssl_default_bind_sigalgs: ECDSA+SHA512:ECDSA+SHA384:ECDSA+SHA256:RSA+SHA512:RSA+SHA384:RSA+SHA256:rsa_pss_rsae_sha512:rsa_pss_rsae_sha384:rsa_pss_rsae_sha256
               ssl_load_extra_files: ocsp
-              tune_options:
-                ssl_ocsp_update_max_delay: 3600
-                ssl_ocsp_update_min_delay: 300
               tune_ssl_default_dh_param: 4096
           EOF
 
