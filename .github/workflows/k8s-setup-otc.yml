@@ -54,11 +54,6 @@ jobs:
 
           helm upgrade --install haproxy-kubernetes-ingress haproxytech/kubernetes-ingress --create-namespace --namespace haproxy-controller -f - <<EOF
           controller:
-            logging:
-              traffic:
-                address: stdout
-                level: info
-                facility: daemon
             service:
               annotations:
                 kubernetes.io/elb.class: union
@@ -68,6 +63,11 @@ jobs:
               externalTrafficPolicy: Local
             config:
               cr-global: haproxy-controller/haproxy-global
+              defaults-config-snippet: |
+                log global
+                option httplog
+              global-config-snippet: |
+                log stdout format raw local0 info
           EOF
       - name: Install Global CRD
         run: |
