@@ -44,7 +44,7 @@ jobs:
         shell: bash
       - name: Add annotation to haproxy deployment
         run: |
-          kubectl get -n haproxy-kubernetes-ingress deploy -o yaml | linkerd inject --skip-inbound-ports 80,443 - | kubectl apply -f -
+          kubectl get -n haproxy-controller deploy -o yaml | linkerd inject --skip-inbound-ports 80,443 - | kubectl apply -f -
         # Explicit egress is necessary so that default opaque ports are used properly
         # See: https://github.com/linkerd/linkerd2/issues/13475
       - name: Add linkerd explicit egress
