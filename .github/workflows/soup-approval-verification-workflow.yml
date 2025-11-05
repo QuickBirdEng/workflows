@@ -55,9 +55,11 @@ jobs:
 
           MAGENTA="\033[95m"
           CYAN="\033[96m"
+          RED="\033[91m"
+          PURPLE="\033[35m"
           RESET="\033[0m"
 
-          echo -e "${MAGENTA}Requirements:${RESET}"
+          echo -e "${RED}Requirements:${RESET}"
           
           FIRST=0
 
@@ -70,6 +72,9 @@ jobs:
               ' "$FILE" | sort -u | while IFS= read -r line; do
                 echo -e "${CYAN}${line}${RESET}"
               done
+
+            echo -e "${PURPLE}Approval Guidelines can be found at https://github.com/quickBirdEng/qb-soups?tab=readme-ov-file#approval-guidelines${RESET}"
+
               FIRST=1
             fi
 
