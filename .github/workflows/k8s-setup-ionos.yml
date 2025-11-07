@@ -3,14 +3,6 @@ name: K8s OTC Base Setup
 on:
   workflow_call:
     inputs:
-      load_balancer_ip:
-        description: "IP Address for the load balancer"
-        type: string
-        required: true
-      load_balancer_id:
-        description: "OTC load balancer ID (Used for OTC)"
-        type: string
-        required: true
       issuer_yaml:
         description: "Yaml file describing cluster issuers"
         type: string

@@ -6,11 +6,13 @@ on:
       load_balancer_ip:
         description: "IP Address for the load balancer"
         type: string
-        required: true
+        required: false
+        default: ""
       load_balancer_id:
         description: "OTC load balancer ID"
         type: string
-        required: true
+        required: false
+        default: ""
       issuer_yaml:
         description: "Yaml file describing cluster issuers"
         type: string
