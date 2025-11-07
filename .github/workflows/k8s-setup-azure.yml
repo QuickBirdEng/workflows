@@ -3,14 +3,6 @@ name: K8s Azure Base Setup
 on:
   workflow_call:
     inputs:
-      load_balancer_ip:
-        description: "IP Address for the load balancer"
-        type: string
-        required: true
-      load_balancer_id:
-        description: "Resource group where the Public IP is located"
-        required: true
-        type: string
       issuer_yaml:
         description: "Yaml file describing cluster issuers"
         type: string
@@ -31,8 +23,8 @@ on:
 
 jobs:
   deploy-ingress-controller:
-    runs-on: [ self-hosted, docker ]
-    if: contains('["acpoppe","KlausNie","kupeliorhun", "nasirky"]', github.triggering_actor)
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,7 +33,6 @@ jobs:
       - uses: azure/setup-helm@v3
         with:
           version: "3.13.3"
-
       - uses: azure/k8s-set-context@v3
         with:
           method: kubeconfig
@@ -49,30 +40,57 @@ jobs:
           context: ${{ secrets.KUBE_CONTEXT }}
       - name: Helm Install Ingress Controller
         run: |
-          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-          
+          helm repo add haproxytech https://haproxytech.github.io/helm-charts
+
           helm repo update
-          
-          helm install ingress-nginx/ingress-nginx \
-            --namespace nginx-ingress-controller \
-            --create-namespace --generate-name \
-            --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-resource-group"="${{ inputs.load_balancer_resource_group }}" \
-            --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-public-ip-address-name"="${{ inputs.public_ip_name }}" \
-            --set controller.service.externalTrafficPolicy="Local" \
-            --set controller.config.enable-ocsp="true" \
+
+          helm upgrade --install haproxy-kubernetes-ingress haproxytech/kubernetes-ingress --create-namespace --namespace haproxy-controller -f - <<EOF
+          controller:
+            service:
+              annotations:
+                kubernetes.io/elb.class: union
+              type: LoadBalancer
+              externalTrafficPolicy: Local
+            config:
+              cr-global: haproxy-controller/haproxy-global
+              defaults-config-snippet: |
+                log global
+                option httplog
+              global-config-snippet: |
+                log stdout format raw local0 info
+          EOF
+      - name: Install Global CRD
+        run: |
+          kubectl apply -f https://www.haproxy.com/documentation/kubernetes-ingress/community/crd/v3-1/ingress.v1.haproxy.org_globals.yaml
+      - name: Setup Global Configuration
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: ingress.v1.haproxy.org/v1
+          kind: Global
+          metadata:
+            annotations:
+            name: haproxy-global
+            namespace: haproxy-controller
+          spec:
+            config:
+              ssl_default_bind_ciphers: ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256
+              ssl_default_bind_ciphersuites: TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384
+              ssl_default_bind_curves: brainpoolP512r1:brainpoolP384r1:brainpoolP256r1:secp521r1:secp384r1:secp256r1
+              ssl_default_bind_options: no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets
+              ssl_default_bind_sigalgs: ECDSA+SHA512:ECDSA+SHA384:ECDSA+SHA256:RSA+SHA512:RSA+SHA384:RSA+SHA256:rsa_pss_rsae_sha512:rsa_pss_rsae_sha384:rsa_pss_rsae_sha256
+              ssl_load_extra_files: ocsp
+              tune_ssl_default_dh_param: 4096
+          EOF
 
   deploy-cert-manager:
-    runs-on: [ self-hosted, docker ]
-    if: contains('["acpoppe","KlausNie,"kupeliorhun", "nasirky"]', github.triggering_actor)
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
     needs: deploy-ingress-controller
     steps:
-      - name: Wait for Ingress Controller to be ready
+      - name: Sleep while ingress-nginx starts
         run: |
-          kubectl wait \
-            --namespace nginx-ingress-controller \
-            --for=condition=ready pod \
-            --selector=app.kubernetes.io/component=controller \
-            --timeout=300s
+          echo "Sleeping for 60 seconds to allow ingress-nginx to start"
+          sleep 60
       - uses: actions/checkout@v4
         with:
           lfs: ${{ inputs.git-lfs }}
@@ -87,15 +105,11 @@ jobs:
           context: ${{ secrets.KUBE_CONTEXT }}
       - name: Helm Install Cert Manager
         run: |
-          helm repo add jetstack https://charts.jetstack.io
-          helm repo update
-          
-          helm install cert-manager jetstack/cert-manager \
-            --version v1.17.0 \
-            -n cert-manager \
-            --create-namespace \
-            --set installCRDs=true
+          helm repo add jetpack https://charts.jetstack.io
 
+          helm repo update
+
+          helm upgrade --install cert-manager jetpack/cert-manager --version v1.17.0 -n cert-manager --create-namespace --set installCRDs=true
       - name: Apply Cluster Issuers
         run: |
           kubectl apply -f ${{ inputs.issuer_yaml }}
@@ -104,8 +118,8 @@ jobs:
           kubectl apply -f ${{ inputs.storage_class_yaml }}
 
   deploy-kyverno:
-    runs-on: [ self-hosted, docker ]
-    if: contains('["acpoppe","KlausNie,"kupeliorhun", "nasirky"]', github.triggering_actor)
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
     needs: deploy-cert-manager
     steps:
       - uses: actions/checkout@v4
@@ -122,8 +136,11 @@ jobs:
           context: ${{ secrets.KUBE_CONTEXT }}
       - name: Helm Install Kyverno
         run: |
-          helm upgrade --install kyverno kyverno --namespace kyverno-system --create-namespace --repo https://kyverno.github.io/kyverno/
+          helm repo add kyverno https://kyverno.github.io/kyverno/
+
+          helm repo update
+
+          helm upgrade --install kyverno kyverno --namespace kyverno-system --create-namespace
       - name: Apply Cluster Policy
         run: |
           kubectl apply -f ${{ inputs.cluster_policy_yaml }}
-
