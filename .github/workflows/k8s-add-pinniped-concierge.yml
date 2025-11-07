@@ -1,0 +1,86 @@
+name: K8s Create Service Mesh
+
+on:
+  workflow_call:
+    inputs:
+      concierge-resources-yaml:
+        description: "Yaml file describing the resources to deploy for Pinniped Concierge"
+        type: string
+        required: true
+      jwt-authenticator-yaml:
+        description: "Yaml file describing the JWT authenticator used by Pinniped Concierge"
+        type: string
+        required: true
+      concierge-http-proxy-yaml:
+        description: "Yaml file describing the HTTP Proxy for the Pinniped Concierge imposter URL"
+        type: string
+        required: true
+      concierge-impersonator-url:
+        description: "The impersonator URL for the Pinniped Concierge"
+        type: string
+        required: true
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
+  workflow_dispatch:
+
+jobs:
+  k8s-setup-app:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.git-lfs }}
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+
+      - name: Helm Install Contour
+        run: |
+          kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+
+      - name: Replace unique workload ID (must be unique among clusters)
+        uses: richardrigutins/replace-in-files@v2
+        with:
+          files: ${{ inputs.jwt-authenticator-yaml }}
+          search-text: '<PINNIPED_AUDIENCE>'
+          replacement-text: workload-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Replace Impersonator URL in resources
+        uses: richardrigutins/replace-in-files@v2
+        with:
+          files: ${{ inputs.concierge-resources-yaml }}
+          search-text: '<PINNIPED_IMPERSONATOR_URL>'
+          replacement-text: ${{ inputs.concierge-impersonator-url }}
+
+      - name: Replace Impersonator URL in HTTP Proxy
+        uses: richardrigutins/replace-in-files@v2
+        with:
+          files: ${{ inputs.concierge-http-proxy-yaml }}
+          search-text: '<PINNIPED_IMPERSONATOR_URL>'
+          replacement-text: ${{ inputs.concierge-impersonator-url }}
+
+      - name: Apply Pinniped Concierge CRDs
+        run: |
+          kubectl apply -f "https://get.pinniped.dev/v0.38.0/install-pinniped-concierge-crds.yaml"
+      - name: Sleep to allow creds to apply
+        run: |
+          sleep 10
+      - name: Apply Pinniped Concierge Resources
+        run: |
+          kubectl apply -f ${{ inputs.concierge-resources-yaml }}
+      - name: Apply Pinniped JWT Authenticator
+        run: |
+          kubectl apply -f ${{ inputs.jwt-authenticator-yaml }}
+      - name: Apply Pinniped Concierge HTTP Proxy
+        run: |
+          kubectl apply -f ${{ inputs.concierge-http-proxy-yaml }}
+
