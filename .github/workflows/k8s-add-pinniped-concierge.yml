@@ -11,7 +11,7 @@ on:
         description: "Yaml file describing the JWT authenticator used by Pinniped Concierge"
         type: string
         required: true
-      concierge-http-proxy-yaml:
+      concierge-ingress-yaml:
         description: "Yaml file describing the HTTP Proxy for the Pinniped Concierge imposter URL"
         type: string
         required: true
@@ -42,10 +42,6 @@ jobs:
       - uses: azure/setup-helm@v3
         with:
           version: "3.13.3"
-
-      - name: Helm Install Contour
-        run: |
-          kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
 
       - name: Replace unique workload ID (must be unique among clusters)
         uses: richardrigutins/replace-in-files@v2
