@@ -152,7 +152,7 @@ jobs:
 
           helm repo update
 
-          helm upgrade --install kyverno kyverno --namespace kyverno-system --create-namespace
+          helm upgrade --install kyverno kyverno/kyverno --namespace kyverno-system --create-namespace
       - name: Apply Cluster Policy
         run: |
           kubectl apply -f ${{ inputs.cluster_policy_yaml }}
