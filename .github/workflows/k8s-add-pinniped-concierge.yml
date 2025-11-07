@@ -60,7 +60,7 @@ jobs:
       - name: Replace Impersonator URL in HTTP Proxy
         uses: richardrigutins/replace-in-files@v2
         with:
-          files: ${{ inputs.concierge-http-proxy-yaml }}
+          files: ${{ inputs.concierge-ingress-yaml }}
           search-text: '<PINNIPED_IMPERSONATOR_URL>'
           replacement-text: ${{ inputs.concierge-impersonator-url }}
 
@@ -78,5 +78,5 @@ jobs:
           kubectl apply -f ${{ inputs.jwt-authenticator-yaml }}
       - name: Apply Pinniped Concierge HTTP Proxy
         run: |
-          kubectl apply -f ${{ inputs.concierge-http-proxy-yaml }}
+          kubectl apply -f ${{ inputs.concierge-ingress-yaml }}
 
