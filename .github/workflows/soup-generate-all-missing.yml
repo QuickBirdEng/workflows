@@ -4,6 +4,12 @@ env:
 
 on:
   workflow_call:
+    inputs:
+      base-branch:
+        description: 'The base branch to compare against (e.g., main)'
+        required: false
+        type: string
+        default: 'main'
 jobs:
   generate-missing:
     runs-on: [self-hosted, Linux]
@@ -19,3 +25,4 @@ jobs:
           repository: ${{ github.event.repository.name }}
           gh-api-token: ${{ env.GH_API_TOKEN }}
           soup-approvers: ${{ vars.SOUP_APPROVERS }}
+          base-branch: ${{ inputs.base-branch }}

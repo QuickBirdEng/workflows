@@ -4,6 +4,12 @@ env:
 
 on:
   workflow_call:
+    inputs:
+      base-branch:
+        description: 'The base branch to compare changes against'
+        required: false
+        type: string
+        default: 'main'
 jobs:
   generate-missing:
     runs-on: [self-hosted, Linux]
@@ -17,4 +23,4 @@ jobs:
           repository: ${{ github.event.repository.name }}
           gh-api-token: ${{ env.GH_API_TOKEN }}
           soup-approvers: ${{ vars.SOUP_APPROVERS }}
-          base-branch: origin/${{ github.event.pull_request.base.ref || 'main' }}
+          base-branch: origin/${{ github.event.pull_request.base.ref || inputs.base-branch || 'main' }}
