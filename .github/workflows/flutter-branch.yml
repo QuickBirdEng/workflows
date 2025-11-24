@@ -61,6 +61,7 @@ jobs:
           use-cache: false
           clean: true
           working-directory: ${{ inputs.working-directory }}
+          skip-build-runner: true
       - run: flutter analyze
 
   test:
