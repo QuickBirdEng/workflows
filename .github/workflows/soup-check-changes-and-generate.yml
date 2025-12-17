@@ -24,3 +24,5 @@ jobs:
           gh-api-token: ${{ env.GH_API_TOKEN }}
           soup-approvers: ${{ vars.SOUP_APPROVERS }}
           base-branch: origin/${{ github.event.pull_request.base.ref || inputs.base-branch || 'main' }}
+          slack-webhook-url: ${{ secrets.SOUP_APPROVERS_WEBHOOK_URL }}
+          github-to-slack-mapping: ${{ vars.SOUP_APPROVERS_GITHUB_TO_SLACK_ID_MAPPING }}
