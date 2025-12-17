@@ -150,6 +150,7 @@ jobs:
           submit-for-review: ${{ inputs.submit-ios-build-for-review }}
           build-arguments: ${{ inputs.ios-build-arguments }}
           obfuscate: ${{ inputs.obfuscate }}
+        continue-on-error: true
       - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
