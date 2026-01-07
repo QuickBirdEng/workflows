@@ -10,6 +10,11 @@ on:
         required: false
         type: string
         default: 'main'
+      excluded-requirements:
+        description: 'A comma-separated list of requirements to exclude from SOUP generation'
+        required: false
+        type: string
+        default: ''
 jobs:
   generate-missing:
     runs-on: [self-hosted, Linux]
@@ -22,6 +27,7 @@ jobs:
       - name: Generate All Missing SOUPs
         uses: QuickBirdEng/actions/soup-generate-all-missing@main
         with:
+          excluded-requirements: ${{ inputs.excluded-requirements }}
           repository: ${{ github.event.repository.name }}
           gh-api-token: ${{ env.GH_API_TOKEN }}
           soup-approvers: ${{ vars.SOUP_APPROVERS }}
