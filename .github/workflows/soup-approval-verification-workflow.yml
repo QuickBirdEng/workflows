@@ -79,13 +79,16 @@ jobs:
             fi
 
             INVALID=$(jq -r '
-              .requirements
+              .metadata.approval.is_temporary? as $temp
+              | .requirements
               | to_entries
               | map(
                   select(
                     (.value.fulfilled != true)
                     and
                     ((.value.reason_if_requirement_not_fulfilled | tostring) == "")
+                    and
+                    ($temp != true)
                   )
                 )
               | .[].key
@@ -96,7 +99,7 @@ jobs:
               echo "::error::❌ $FILE -> $INVALID_LIST"
               STATUS=1
             else
-              echo "✅ $FILE -> All requirements are either fulfilled or there is a valid reason if not fulfilled."
+              echo "✅ $FILE -> All requirements are either fulfilled or there is a temporary approval or there is a valid reason if not fulfilled."
             fi
           done
 
