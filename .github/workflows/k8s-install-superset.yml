@@ -1,0 +1,148 @@
+name: Deploy Superset
+
+on:
+  workflow_call:
+    inputs:
+      namespace:
+        required: true
+        type: string
+      values-file:
+        required: false
+        type: string
+        default: ""
+      one_pw_secrets_note_item:
+        required: true
+        type: string
+      one_pw_vault:
+        required: true
+        type: string
+      one_pw_k8s_deploy_credentials:
+        required: true
+        type: string
+
+jobs:
+  setup-k8s-secrets:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+
+      - name: Load secret
+        uses: 1password/load-secrets-action@v3
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets[inputs.SUPERSET_OP_SERVICE_ACCOUNT_TOKEN] }}
+          K8S_API_URL: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_k8s_deploy_credentials }}/K8s Credentials/kube-api-url
+          K8S_SERVICE_ACCOUNT_TOKEN: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_k8s_deploy_credentials }}/K8s Credentials/kube-service-account-secret
+          SUPERSET_SECRET_KEY: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SUPERSET_SECRET_KEY
+          DB_HOST: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_HOST
+          DB_PORT: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_PORT
+          DB_USER: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_USER
+          DB_PASS: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_PASS
+          DB_NAME: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_NAME
+
+      - uses: azure/setup-kubectl@v4
+      - uses: azure/k8s-set-context@v4
+        with:
+          method: service-account
+          k8s-url: ${{ env.K8S_API_URL }}
+          k8s-secret: ${{ env.K8S_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Delete Superset Secrets
+        continue-on-error: true
+        run: kubectl delete secret superset-env --namespace=${{ inputs.namespace }}
+      - name: Apply Superset Secrets
+        run: |
+          kubectl create secret generic superset-env \
+            --from-literal=SUPERSET_SECRET_KEY="${{ env.SUPERSET_SECRET_KEY }}" \
+            --from-literal=DB_HOST="${{ env.DB_HOST }}" \
+            --from-literal=DB_PORT="${{ env.DB_PORT }}" \
+            --from-literal=DB_USER="${{ env.DB_USER }}" \
+            --from-literal=DB_PASSWORD="${{ env.DB_PASS }}" \
+            --from-literal=DB_NAME="${{ env.DB_NAME }}" \
+            --namespace=${{ inputs.namespace }}
+
+  deploy-superset:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
+    needs: setup-k8s-secrets
+    steps:
+      - uses: actions/checkout@v6
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+
+      - name: Helm Install Superset
+        run: |
+          helm repo add superset https://apache.github.io/superset
+          helm repo update
+
+          VALUES_FILE_FLAG=""
+          if [ -n "${{ inputs.values-file }}" ]; then
+            VALUES_FILE_FLAG="-f ${{ inputs.values-file }}"
+          fi
+
+          cat <<EOF | helm upgrade --install superset superset/superset \
+            --namespace "${{ inputs.namespace }}" \
+            --create-namespace \
+            -f - \
+            $VALUES_FILE_FLAG \
+            --version 0.15.3 \
+            --wait --timeout 10m
+          postgresql:
+            enabled: false
+
+          extraEnvRaw:
+            - name: SUPERSET_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: SUPERSET_SECRET_KEY
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: DB_PORT
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: DB_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: DB_NAME
+
+          configOverrides:
+            secret: |
+              import os
+              SECRET_KEY = os.environ.get('SUPERSET_SECRET_KEY')
+              SQLALCHEMY_DATABASE_URI = (
+                  f"postgresql+psycopg2://{os.environ['DB_USER']}:{os.environ['DB_PASS']}"
+                  f"@{os.environ['DB_HOST']}:{os.environ.get('DB_PORT', '5432')}"
+                  f"/{os.environ['DB_NAME']}"
+              )
+
+          init:
+            enabled: true
+          EOF
