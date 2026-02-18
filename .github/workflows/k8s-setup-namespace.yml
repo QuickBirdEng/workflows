@@ -66,6 +66,7 @@ jobs:
                 - pods/log
                 - pods/portforward
                 - secrets
+                - serviceaccounts
                 - services
               verbs:
                 - get

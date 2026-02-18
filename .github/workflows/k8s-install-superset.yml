@@ -66,6 +66,13 @@ jobs:
             --from-literal=DB_PASSWORD="${{ env.DB_PASS }}" \
             --from-literal=DB_NAME="${{ env.DB_NAME }}" \
             --namespace=${{ inputs.namespace }}
+          kubectl label secret superset-env \
+            app.kubernetes.io/managed-by=Helm \
+            --namespace=${{ inputs.namespace }}
+          kubectl annotate secret superset-env \
+            meta.helm.sh/release-name=superset \
+            meta.helm.sh/release-namespace=${{ inputs.namespace }} \
+            --namespace=${{ inputs.namespace }}
 
   deploy-superset:
     runs-on: [self-hosted, docker]
