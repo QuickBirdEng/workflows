@@ -132,6 +132,25 @@ jobs:
               app.kubernetes.io/name: redis
               app.kubernetes.io/instance: superset
           ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: superset-redis-headless
+            namespace: ${{ inputs.namespace }}
+            labels:
+              app.kubernetes.io/name: redis
+              app.kubernetes.io/instance: superset
+          spec:
+            type: ClusterIP
+            clusterIP: None
+            ports:
+              - name: redis
+                port: 6379
+                targetPort: 6379
+            selector:
+              app.kubernetes.io/name: redis
+              app.kubernetes.io/instance: superset
+          ---
           apiVersion: apps/v1
           kind: StatefulSet
           metadata:
