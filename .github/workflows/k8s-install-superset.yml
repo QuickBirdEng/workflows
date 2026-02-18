@@ -198,3 +198,12 @@ jobs:
                 - ${{ inputs.ingress-host }}
                 secretName: superset-tls
           EOF
+
+      - name: Patch superset-redis service account with image pull secret
+        run: |
+          kubectl patch serviceaccount superset-redis \
+            --namespace "${{ inputs.namespace }}" \
+            --type merge \
+            -p '{"imagePullSecrets": [{"name": "regcred"}]}'
+          kubectl rollout restart statefulset/superset-redis-master \
+            --namespace "${{ inputs.namespace }}"
