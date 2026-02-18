@@ -73,16 +73,25 @@ jobs:
     needs: setup-k8s-secrets
     steps:
       - uses: actions/checkout@v6
-      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-kubectl@v4
       - uses: azure/setup-helm@v3
         with:
           version: "3.13.3"
 
-      - uses: azure/k8s-set-context@v3
+      - name: Load secret
+        uses: 1password/load-secrets-action@v3
         with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
-          context: ${{ secrets.KUBE_CONTEXT }}
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets[inputs.op_service_account_token] }}
+          K8S_API_URL: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_k8s_deploy_credentials }}/K8s Credentials/kube-api-url
+          K8S_SERVICE_ACCOUNT_TOKEN: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_k8s_deploy_credentials }}/K8s Credentials/kube-service-account-secret
+
+      - uses: azure/k8s-set-context@v4
+        with:
+          method: service-account
+          k8s-url: ${{ env.K8S_API_URL }}
+          k8s-secret: ${{ env.K8S_SERVICE_ACCOUNT_TOKEN }}
 
       - name: Helm Install Superset
         run: |
@@ -99,7 +108,7 @@ jobs:
             --create-namespace \
             -f - \
             $VALUES_FILE_FLAG \
-            --version 0.15.3 \
+            --version 0.15.2 \
             --wait --timeout 10m
           postgresql:
             enabled: false
