@@ -102,6 +102,8 @@ jobs:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets[inputs.op_service_account_token] }}
           K8S_API_URL: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_k8s_deploy_credentials }}/K8s Credentials/kube-api-url
           K8S_SERVICE_ACCOUNT_TOKEN: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_k8s_deploy_credentials }}/K8s Credentials/kube-service-account-secret
+          DB_HOST: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_HOST
+          DB_PORT: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_PORT
 
       - uses: azure/k8s-set-context@v4
         with:
@@ -127,6 +129,11 @@ jobs:
             --wait --timeout 10m
           postgresql:
             enabled: false
+
+          supersetNode:
+            connections:
+              db_host: ${{ env.DB_HOST }}
+              db_port: ${{ env.DB_PORT }}
 
           extraEnvRaw:
             - name: SUPERSET_SECRET_KEY
@@ -178,6 +185,11 @@ jobs:
             ingressClassName: haproxy
             annotations:
               haproxy.org/allow-list: "${{ inputs.allowed-ips }}"
+              cert-manager.io/cluster-issuer: letsencrypt-prod
             hosts:
               - ${{ inputs.ingress-host }}
+            tls:
+              - hosts:
+                - ${{ inputs.ingress-host }}
+                secretName: superset-tls
           EOF
