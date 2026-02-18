@@ -127,6 +127,11 @@ jobs:
             $VALUES_FILE_FLAG \
             --version 0.15.2 \
             --wait --timeout 10m
+          redis:
+            image:
+              pullSecrets:
+                - regcred
+
           postgresql:
             enabled: false
 
