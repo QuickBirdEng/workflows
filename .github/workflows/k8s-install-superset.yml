@@ -111,6 +111,62 @@ jobs:
           k8s-url: ${{ env.K8S_API_URL }}
           k8s-secret: ${{ env.K8S_SERVICE_ACCOUNT_TOKEN }}
 
+      - name: Apply Redis
+        run: |
+          kubectl apply -f - <<EOF
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: superset-redis-master
+            namespace: ${{ inputs.namespace }}
+            labels:
+              app.kubernetes.io/name: redis
+              app.kubernetes.io/instance: superset
+          spec:
+            type: ClusterIP
+            ports:
+              - name: redis
+                port: 6379
+                targetPort: 6379
+            selector:
+              app.kubernetes.io/name: redis
+              app.kubernetes.io/instance: superset
+          ---
+          apiVersion: apps/v1
+          kind: StatefulSet
+          metadata:
+            name: superset-redis-master
+            namespace: ${{ inputs.namespace }}
+            labels:
+              app.kubernetes.io/name: redis
+              app.kubernetes.io/instance: superset
+          spec:
+            selector:
+              matchLabels:
+                app.kubernetes.io/name: redis
+                app.kubernetes.io/instance: superset
+            serviceName: superset-redis-master
+            replicas: 1
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: redis
+                  app.kubernetes.io/instance: superset
+              spec:
+                containers:
+                  - name: redis
+                    image: public.ecr.aws/docker/library/redis:7.0
+                    ports:
+                      - name: redis
+                        containerPort: 6379
+                    volumeMounts:
+                      - name: redis-data
+                        mountPath: /data
+                volumes:
+                  - name: redis-data
+                    emptyDir: {}
+          EOF
+
       - name: Helm Install Superset
         run: |
           helm repo add superset https://apache.github.io/superset
@@ -128,10 +184,7 @@ jobs:
             --version 0.15.2 \
             --wait --timeout 10m
           redis:
-            image:
-              registry: registry-1.docker.io
-              pullSecrets:
-                - regcred
+            enabled: false
 
           postgresql:
             enabled: false
@@ -200,11 +253,3 @@ jobs:
                 secretName: superset-tls
           EOF
 
-      - name: Patch superset-redis service account with image pull secret
-        run: |
-          kubectl patch serviceaccount superset-redis \
-            --namespace "${{ inputs.namespace }}" \
-            --type merge \
-            -p '{"imagePullSecrets": [{"name": "regcred"}]}'
-          kubectl rollout restart statefulset/superset-redis-master \
-            --namespace "${{ inputs.namespace }}"
