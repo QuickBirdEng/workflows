@@ -247,7 +247,7 @@ jobs:
 
           bootstrapScript: |
             #!/bin/bash
-            pip install psycopg2-binary mysqlclient
+            /app/.venv/bin/pip install psycopg2-binary PyMySQL
             if [ ! -f ~/bootstrap ]; then echo "Running Superset with uid 0" > ~/bootstrap; fi
 
           configOverrides:
