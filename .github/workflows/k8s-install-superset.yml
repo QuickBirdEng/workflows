@@ -19,6 +19,9 @@ on:
       one_pw_k8s_deploy_credentials:
         required: true
         type: string
+      op_service_account_token:
+        required: true
+        type: string
 
 jobs:
   setup-k8s-secrets:
@@ -33,7 +36,7 @@ jobs:
         with:
           export-env: true
         env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets[inputs.SUPERSET_OP_SERVICE_ACCOUNT_TOKEN] }}
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets[inputs.op_service_account_token] }}
           K8S_API_URL: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_k8s_deploy_credentials }}/K8s Credentials/kube-api-url
           K8S_SERVICE_ACCOUNT_TOKEN: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_k8s_deploy_credentials }}/K8s Credentials/kube-service-account-secret
           SUPERSET_SECRET_KEY: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SUPERSET_SECRET_KEY
