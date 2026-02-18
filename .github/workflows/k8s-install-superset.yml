@@ -129,6 +129,7 @@ jobs:
             --wait --timeout 10m
           redis:
             image:
+              registry: registry-1.docker.io
               pullSecrets:
                 - regcred
 
