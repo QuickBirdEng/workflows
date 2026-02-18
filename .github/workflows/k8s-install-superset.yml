@@ -112,7 +112,6 @@ jobs:
 
           cat <<EOF | helm upgrade --install superset superset/superset \
             --namespace "${{ inputs.namespace }}" \
-            --create-namespace \
             -f - \
             $VALUES_FILE_FLAG \
             --version 0.15.2 \
