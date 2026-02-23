@@ -1,0 +1,33 @@
+name: GID Server - Generate and Store Keys
+env:
+  ENVIRONMENT_FILE: .env
+
+on:
+  workflow_call:
+    inputs:
+      service-account-token-key:
+        description: 'The 1Password service token to be used for the step'
+        type: string
+        required: true
+      project-name:
+        description: 'The name of the vault where the secret will be stored'
+        type: string
+        required: true
+      environment:
+        description: 'The environment for which the keys are being generated (e.g., production, staging)'
+        type: string
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  generate-and-store-keys:
+    runs-on: [self-hosted, MacOS]
+    if: contains('["nasirky","KlausNie","acpoppe","grafele"]', github.triggering_actor)
+    steps:
+        - uses: QuickBirdEng/actions/generate-and-store-gid-server-keys@main
+          with:
+            service-account-token: ${{ secrets.GID_KEYS_OP_SERVICE_ACCOUNT_TOKEN }}
+            project-name: ${{ inputs.project-name }}
+            environment: ${{ inputs.environment }}
