@@ -288,3 +288,8 @@ jobs:
       flutter-working-directory: ${{ inputs.working-directory }}
       flutter-report: true
     secrets: inherit
+
+  soup-reports:
+    if: ${{ github.ref_type == 'tag' }}
+    uses: QuickBirdEng/workflows/.github/workflows/soups-generate-reports.yml@main
+    secrets: inherit

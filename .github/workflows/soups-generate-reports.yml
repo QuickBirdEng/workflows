@@ -15,4 +15,5 @@ jobs:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
       - uses: QuickBirdEng/actions/soups-generate-reports@main
         with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
           generate-pdfs: ${{ inputs.generate-pdfs }}
