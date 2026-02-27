@@ -29,6 +29,171 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
           context: ${{ secrets.KUBE_CONTEXT }}
+
+      - name: Create linkerd namespace
+        run: |
+          kubectl create namespace linkerd || true
+
+      - name: Install trust manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io --force-update
+
+          helm install \
+            trust-manager jetstack/trust-manager \
+            --namespace cert-manager \
+            --set app.trust.namespace=cert-manager \
+            --wait
+
+      - name: Install self-signed issuer for cert-manager
+        run: |
+          kubectl apply -f - <<EOF
+          apiVersion: cert-manager.io/v1
+          kind: Issuer
+          metadata:
+            name: linkerd-trust-root-issuer
+            namespace: cert-manager
+          spec:
+            selfSigned: {}
+          EOF
+
+      - name: Create trust root for linkerd
+        run: |
+          kubectl apply -f - <<EOF
+          ---
+          apiVersion: cert-manager.io/v1
+          kind: Certificate
+          metadata:
+            name: linkerd-trust-anchor
+            namespace: cert-manager
+          spec:
+            issuerRef:
+              kind: Issuer
+              name: linkerd-trust-root-issuer
+
+            secretName: linkerd-trust-anchor
+
+            isCA: true
+            commonName: root.linkerd.cluster.local
+            duration: 8760h0m0s
+            renewBefore: 7320h0m0s
+            privateKey:
+              rotationPolicy: Always
+              algorithm: ECDSA
+          EOF
+
+      - name: Wait for trust anchor
+        run: kubectl wait --for=condition=Ready certificate/linkerd-trust-anchor -n cert-manager --timeout=120s
+
+      - name: Create identity issuer clusterIssuer for linkerd
+        run: |
+          kubectl apply -f - <<EOF
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
+          metadata:
+            name: linkerd-identity-issuer
+            namespace: cert-manager
+          spec:
+            ca:
+              secretName: linkerd-trust-anchor
+          EOF
+
+      - name: Create identity issuer certificate for linkerd
+        run: |
+          kubectl apply -f - <<EOF
+          ---
+          apiVersion: cert-manager.io/v1
+          kind: Certificate
+          metadata:
+            name: linkerd-identity-issuer
+            namespace: linkerd
+          spec:
+            issuerRef:
+              name: linkerd-identity-issuer
+              kind: ClusterIssuer
+
+            secretName: linkerd-identity-issuer
+
+            isCA: true
+            commonName: identity.linkerd.cluster.local
+            duration: 48h0m0s
+            renewBefore: 25h0m0s
+            privateKey:
+              rotationPolicy: Always
+              algorithm: ECDSA
+          EOF
+
+      - name: Wait for identity issuer
+        run: kubectl wait --for=condition=Ready certificate/linkerd-identity-issuer -n linkerd --timeout=120s
+
+      - name: Duplicate trust certificate as previous certificate to allow linkerd to use it as trust anchor while updates are being applied
+        run: |
+          kubectl get secret -n cert-manager linkerd-trust-anchor -o yaml \
+            | sed -e s/linkerd-trust-anchor/linkerd-previous-anchor/ \
+            | egrep -v '^  *(resourceVersion|uid)' \
+            | kubectl apply -f -
+
+      - name: Create trust bundle
+        run: |
+          kubectl apply -f - <<EOF
+          ---
+          apiVersion: trust.cert-manager.io/v1alpha1
+          kind: Bundle
+          metadata:
+            # This is the name of the Bundle and _also_ the name of the
+            # ConfigMap in which we'll write the trust bundle.
+            name: linkerd-identity-trust-roots
+          spec:
+            # This tells trust-manager where to find the public keys to copy into
+            # the trust bundle.
+            sources:
+              # This is the Secret that cert-manager will update when it rotates
+              # the trust anchor.
+              - secret:
+                  name: "linkerd-trust-anchor"
+                  key: "tls.crt"
+
+              # This is the Secret that we will use to hold the previous trust
+              # anchor; we'll manually update this Secret after we're finished
+              # restarting things.
+              - secret:
+                  name: "linkerd-previous-anchor"
+                  key: "tls.crt"
+
+            # This tells trust-manager the key to use when writing the trust
+            # bundle into the ConfigMap. The target stanza doesn't have a way
+            # to specify the name of the namespace, but thankfully Linkerd puts
+            # a unique label on the control plane's namespace.
+            target:
+              configMap:
+                key: "ca-bundle.crt"
+              namespaceSelector:
+                matchLabels:
+                  linkerd.io/is-control-plane: "true"
+          EOF
+
+      - name: Wait for trust bundle to sync
+        run: |
+          echo "Waiting for trust bundle to sync..."
+          for i in $(seq 1 30); do
+            CA_BUNDLE=$(kubectl get configmap -n linkerd linkerd-identity-trust-roots -o jsonpath='{.data.ca-bundle\.crt}' 2>/dev/null || echo "")
+            if [ -n "$CA_BUNDLE" ]; then
+              echo "Trust bundle synced successfully."
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "ERROR: Trust bundle configmap not populated after 60s."
+              echo "Bundle status:"
+              kubectl get bundle linkerd-identity-trust-roots -o jsonpath='{.status.conditions[0].message}' || true
+              echo ""
+              echo "Falling back to manual configmap creation..."
+              kubectl create configmap linkerd-identity-trust-roots -n linkerd \
+                --from-literal=ca-bundle.crt="$(kubectl get secret -n cert-manager linkerd-trust-anchor -o jsonpath='{.data.tls\.crt}' | base64 -d)" \
+                --dry-run=client -o yaml | kubectl apply -f -
+            fi
+            echo "  Waiting... ($i/30)"
+            sleep 2
+          done
+
       - name: Install CRDs
         run: |
           kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml
@@ -37,11 +202,16 @@ jobs:
           linkerd install --crds | kubectl apply -f -
       - name: Install linkerd control plane to cluster
         run: |
-          linkerd install | kubectl apply -f -
-        # Need to add a sleep here so that linkerd-destination has time to come up
-      - name: Sleep for 90 seconds
-        run: sleep 90s
-        shell: bash
+          linkerd install \
+            --set identity.externalCA=true \
+            --set identity.issuer.scheme=kubernetes.io/tls \
+            | kubectl apply -f -
+
+      - name: Wait for linkerd control plane
+        run: |
+          kubectl rollout status deploy -n linkerd --timeout=300s
+          linkerd check
+
       - name: Add annotation to haproxy deployment
         run: |
           kubectl get -n haproxy-controller deploy -o yaml | linkerd inject --skip-inbound-ports 8080,8443,80,443 - | kubectl apply -f -
@@ -67,3 +237,108 @@ jobs:
       - name: Add linkerd visualizer
         run: |
           linkerd viz install | kubectl apply -f -
+
+      - name: Create Docker Hub pull secret
+        run: |
+          kubectl create secret docker-registry docker-hub-creds \
+            --namespace=linkerd \
+            --docker-server=https://index.docker.io/v1/ \
+            --docker-username=${{ secrets.DOCKER_HUB_USER }} \
+            --docker-password=${{ secrets.DOCKER_HUB_APP_TOKEN }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Add cert rotator
+        run: |
+          kubectl apply -f - <<EOF
+          ---
+          kind: ServiceAccount
+          apiVersion: v1
+          metadata:
+            name: rotator
+            namespace: linkerd
+
+          ---
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            name: rotator
+            namespace: linkerd
+          rules:
+            - apiGroups: ["apps", "extensions", "cert-manager.io"]
+              resources: ["deployments", "certificates", "certificates/status"]
+              verbs: ["get", "patch", "list", "watch", "update"]
+
+          ---
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: rotator
+            namespace: linkerd
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: Role
+            name: rotator
+          subjects:
+            - kind: ServiceAccount
+              name: rotator
+              namespace: linkerd
+
+          ---
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            name: rotator-clusterrole
+          rules:
+          - apiGroups: ["cert-manager.io", ""]
+            resources: ["certificates", "certificates/status", "secrets"]
+            verbs: ["get", "list", "patch", "update"]
+          - apiGroups: ["*"]
+            resources: ["namespaces", "deployments"]
+            verbs: ["get", "list"]
+          - apiGroups: ["*"]
+            resources: ["deployments"]
+            verbs: ["get", "list", "watch", "patch"]
+
+          ---
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: rotator-clusterrolebinding
+            namespace: cert-manager
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: rotator-clusterrole
+          subjects:
+          - kind: ServiceAccount
+            name: rotator
+            namespace: linkerd
+
+          ---
+          apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: linkerd-cert-rotation
+            namespace: linkerd
+          spec:
+            concurrencyPolicy: Forbid
+            schedule: 0 3 * * *
+            jobTemplate:
+              spec:
+                backoffLimit: 0
+                activeDeadlineSeconds: 600
+                template:
+                  spec:
+                    imagePullSecrets:
+                      - name: docker-hub-creds
+                    serviceAccountName: rotator
+                    restartPolicy: Never
+                    activeDeadlineSeconds: 3600
+                    containers:
+                      - name: linkerd-cert-rotator
+                        image: qbsdocker/service-mesh-rotation-cron:v1.0.0
+                        imagePullPolicy: Always
+                        command: [ "sh", "-c" ]
+                        args:
+                        - "/scripts/rotation.sh >> /proc/1/fd/1 2>&1"
+          EOF
