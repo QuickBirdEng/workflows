@@ -11,7 +11,7 @@ on:
         type: string
 
 jobs:
-  verify-and-update-approval:
+  temporary-approval:
     if: github.ref_name != 'main' && contains(format(',{0},', vars.SOUP_APPROVERS), format(',{0},', github.triggering_actor))
     runs-on: [self-hosted, Linux]
     steps:
