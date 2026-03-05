@@ -17,6 +17,7 @@ on:
         default: ''
 jobs:
   generate-missing:
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: [self-hosted, Linux]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
