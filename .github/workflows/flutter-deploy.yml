@@ -160,8 +160,8 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          dart-symbols-file-path: ${{ steps.publish-ios.outputs.artifact-dsyms-path }}
-          dsyms-path: ${{ steps.publish-ios.outputs.artifact-dart-symbols-file-path }}
+          dart-symbols-file-path: ${{ steps.publish-ios.outputs.artifact-dart-symbols-file-path }}
+          dsyms-path: ${{ steps.publish-ios.outputs.artifact-dsyms-path }}
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         if: contains(inputs.android-build-arguments, 'PRODUCTION')
