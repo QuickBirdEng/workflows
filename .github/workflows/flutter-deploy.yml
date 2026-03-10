@@ -37,10 +37,6 @@ on:
         description: "Generate dependency reports"
         type: boolean
         default: true
-      finalize-sentry-release:
-        description: "Create and finalize a Sentry release after build. Should be enabled for production-like releases (study, production) only."
-        type: boolean
-        default: false
 
   workflow_dispatch:
     inputs:
@@ -125,7 +121,6 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.publish-android.outputs.artifact-dart-symbols-file-path }}
           proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
-          release: ${{ inputs.finalize-sentry-release == true && steps.publish-android.outputs.version-and-build-number || '' }}
         continue-on-error: true
 
   ios-publish:
@@ -167,7 +162,6 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.publish-ios.outputs.artifact-dart-symbols-file-path }}
           dsyms-path: ${{ steps.publish-ios.outputs.artifact-dsyms-path }}
-          release: ${{ inputs.finalize-sentry-release == true && steps.publish-ios.outputs.version-and-build-number || '' }}
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         if: contains(inputs.android-build-arguments, 'PRODUCTION')
@@ -215,7 +209,6 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.flutter-build.outputs.artifact-dart-symbols-file-path }}
           proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
-          release: ${{ inputs.finalize-sentry-release == true && steps.flutter-build.outputs.version-and-build-number || '' }}
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
