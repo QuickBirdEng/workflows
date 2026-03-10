@@ -81,7 +81,7 @@ jobs:
             renewBefore: 7320h0m0s
             privateKey:
               rotationPolicy: Always
-              algorithm: ECDSA
+              algorithm: RSA
           EOF
 
       - name: Wait for trust anchor
@@ -122,7 +122,7 @@ jobs:
             renewBefore: 25h0m0s
             privateKey:
               rotationPolicy: Always
-              algorithm: ECDSA
+              algorithm: RSA
           EOF
 
       - name: Wait for identity issuer
