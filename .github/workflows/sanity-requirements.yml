@@ -73,7 +73,7 @@ jobs:
           fetch-depth: ${{ inputs.checkout-fetch-depth }}
           clean: ${{ inputs.checkout-clean }}
 
-      - uses: QuickBirdEng/actions/check-loc@extract-sanity-requirements
+      - uses: QuickBirdEng/actions/check-loc@main
         with:
           base-branches: ${{ inputs.base-branches }}
           end-ref: ${{ github.sha }}
@@ -86,7 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: QuickBirdEng/actions/assert-branch-ticket-todos@extract-sanity-requirements
+      - uses: QuickBirdEng/actions/assert-branch-ticket-todos@main
         with:
           branch-name: ${{ inputs.branch-name || github.ref_name }}
           ticket-prefixes: ${{ inputs.ticket-prefixes }}
