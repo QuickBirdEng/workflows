@@ -1,0 +1,17 @@
+name: Sanity Requirements
+
+on:
+  push:
+    branches:
+      - "**"
+      - "!main"
+      - "!develop"
+      - "!release/*"
+  workflow_dispatch:
+
+jobs:
+  sanity:
+    uses: QuickBirdEng/workflows/.github/workflows/sanity-requirements.yml@main
+    with:
+      ticket-prefixes: "MNET"
+    secrets: inherit
