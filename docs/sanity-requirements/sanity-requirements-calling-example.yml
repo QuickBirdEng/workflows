@@ -11,7 +11,7 @@ on:
 
 jobs:
   sanity:
-    uses: QuickBirdEng/workflows/.github/workflows/sanity-requirements.yml@codex/extract-sanity-requirements
+    uses: QuickBirdEng/workflows/.github/workflows/sanity-requirements.yml@extract-sanity-requirements
     with:
       ticket-prefixes: "MNET"
     secrets: inherit
