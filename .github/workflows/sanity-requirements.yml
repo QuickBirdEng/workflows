@@ -1,0 +1,98 @@
+name: Sanity Requirements
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: "Runner label for both jobs."
+        type: string
+        default: "default-k8s-runner"
+      checkout-fetch-depth:
+        description: "Fetch depth used during checkout. Increase this if merge-base detection needs more history."
+        type: number
+        default: 1000
+      checkout-clean:
+        description: "Whether checkout should clean the workspace before fetching."
+        type: boolean
+        default: false
+      base-branches:
+        description: "Comma- or newline-separated candidate base branches. The closest merge-base wins."
+        type: string
+        default: "main"
+      loc-limit:
+        description: "Maximum inserted plus deleted lines allowed for the branch diff."
+        type: number
+        default: 800
+      loc-ignore-patterns:
+        description: "Additional newline-separated git pathspec exclude patterns for the LoC check."
+        type: string
+        default: ""
+      branch-name:
+        description: "Branch name to validate. Defaults to github.ref_name when empty."
+        type: string
+        default: ""
+      ticket-prefixes:
+        description: "Optional comma- or newline-separated allowed ticket prefixes."
+        type: string
+        default: ""
+      ticket-regex:
+        description: "Regex with a single capture group used when ticket-prefixes is empty."
+        type: string
+        default: "([A-Z][A-Z0-9]+-[0-9X]+)"
+      fail-on-missing-ticket:
+        description: "Fail when no ticket identifier can be extracted from the branch name."
+        type: boolean
+        default: true
+      skip-dependabot:
+        description: "Skip the branch ticket check for Dependabot branches and actor."
+        type: boolean
+        default: true
+      ticket-search-directory:
+        description: "Directory to scan for leftover ticket identifiers."
+        type: string
+        default: "."
+      ticket-search-exclude-dirs:
+        description: "Comma- or newline-separated directories excluded from the ticket search."
+        type: string
+        default: ".git,.idea,node_modules"
+      ticket-search-exclude-globs:
+        description: "Comma- or newline-separated file globs excluded from the ticket search."
+        type: string
+        default: "*.dill,*.bin,*.xml"
+
+concurrency:
+  group: sanity-checks-${{ github.repository }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  loc-check:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ inputs.checkout-fetch-depth }}
+          clean: ${{ inputs.checkout-clean }}
+
+      - uses: QuickBirdEng/actions/check-loc@codex/extract-sanity-requirements
+        with:
+          base-branches: ${{ inputs.base-branches }}
+          end-ref: ${{ github.sha }}
+          loc-limit: ${{ inputs.loc-limit }}
+          ignore-patterns: ${{ inputs.loc-ignore-patterns }}
+
+  assert-branch-ticket-todos:
+    if: ${{ !inputs.skip-dependabot || (github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot')) }}
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: QuickBirdEng/actions/assert-branch-ticket-todos@codex/extract-sanity-requirements
+        with:
+          branch-name: ${{ inputs.branch-name || github.ref_name }}
+          ticket-prefixes: ${{ inputs.ticket-prefixes }}
+          ticket-regex: ${{ inputs.ticket-regex }}
+          fail-on-missing-ticket: ${{ inputs.fail-on-missing-ticket }}
+          skip-dependabot: ${{ inputs.skip-dependabot }}
+          search-directory: ${{ inputs.ticket-search-directory }}
+          search-exclude-dirs: ${{ inputs.ticket-search-exclude-dirs }}
+          search-exclude-globs: ${{ inputs.ticket-search-exclude-globs }}
