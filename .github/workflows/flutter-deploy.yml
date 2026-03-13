@@ -124,6 +124,7 @@ jobs:
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.publish-android.outputs.artifact-dart-symbols-file-path }}
+          dart-obfuscation-map-file-path: ${{ steps.publish-android.outputs.artifact-dart-obfuscation-map-file-path }}
           proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
           release: ${{ inputs.finalize-sentry-release == true && steps.publish-android.outputs.version-and-build-number || '' }}
         continue-on-error: true
@@ -166,6 +167,7 @@ jobs:
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.publish-ios.outputs.artifact-dart-symbols-file-path }}
+          dart-obfuscation-map-file-path: ${{ steps.publish-ios.outputs.artifact-dart-obfuscation-map-file-path }}
           dsyms-path: ${{ steps.publish-ios.outputs.artifact-dsyms-path }}
           release: ${{ inputs.finalize-sentry-release == true && steps.publish-ios.outputs.version-and-build-number || '' }}
         continue-on-error: true
@@ -214,6 +216,7 @@ jobs:
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           dart-symbols-file-path: ${{ steps.flutter-build.outputs.artifact-dart-symbols-file-path }}
+          dart-obfuscation-map-file-path: ${{ steps.flutter-build.outputs.artifact-dart-obfuscation-map-file-path }}
           proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
           release: ${{ inputs.finalize-sentry-release == true && steps.flutter-build.outputs.version-and-build-number || '' }}
         continue-on-error: true
