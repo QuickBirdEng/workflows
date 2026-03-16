@@ -6,7 +6,7 @@ on:
       runs-on:
         description: 'Runner label for the scan job.'
         type: string
-        default: 'ubuntu-latest'
+        default: 'default-k8s-runner'
       search-directory:
         description: 'Directory to scan recursively for invisible Unicode characters.'
         type: string
