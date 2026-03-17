@@ -6,4 +6,13 @@ on:
 jobs:
   security:
     uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
-    secrets: inherit
+
+  trufflehog-scan:
+    runs-on: default-k8s-runner
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: QuickBirdEng/actions/trufflehog-scan@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

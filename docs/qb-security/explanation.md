@@ -26,12 +26,23 @@ on:
   pull_request:
 
 jobs:
+  # Invisible Unicode detection — no secrets needed
   security:
     uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
-    secrets: inherit
+
+  # Secret scanning — separate job, passes only the token it needs
+  trufflehog-scan:
+    runs-on: default-k8s-runner
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: QuickBirdEng/actions/trufflehog-scan@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-That is the minimal setup. `secrets: inherit` is required for the TruffleHog job to access `GITHUB_TOKEN`.
+The unicode scan requires no secrets. TruffleHog runs as a separate job and receives only `GITHUB_TOKEN` — no `secrets: inherit` needed.
 
 ## Inputs
 
