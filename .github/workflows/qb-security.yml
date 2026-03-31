@@ -1,0 +1,40 @@
+name: QB Security
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: 'Runner label for the scan job.'
+        type: string
+        default: 'default-k8s-runner'
+      search-directory:
+        description: 'Directory to scan recursively for invisible Unicode characters.'
+        type: string
+        default: '.'
+      exclude-dirs:
+        description: 'Comma-separated directory names to exclude from the scan.'
+        type: string
+        default: '.git,node_modules,.idea,build,dist'
+      exclude-patterns:
+        description: 'Comma-separated file glob patterns to exclude from the scan.'
+        type: string
+        default: '*.png,*.jpg,*.jpeg,*.gif,*.ico,*.pdf,*.zip,*.tar,*.gz,*.bin,*.dill'
+      fail-on-found:
+        description: 'Fail the workflow when invisible Unicode characters are found.'
+        type: boolean
+        default: true
+
+jobs:
+  unicode-security-scan:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Invisible Unicode
+        uses: QuickBirdEng/actions/detect-invisible-unicode@main
+        with:
+          search-directory: ${{ inputs.search-directory }}
+          exclude-dirs: ${{ inputs.exclude-dirs }}
+          exclude-patterns: ${{ inputs.exclude-patterns }}
+          fail-on-found: ${{ inputs.fail-on-found }}
