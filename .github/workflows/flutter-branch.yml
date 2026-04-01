@@ -62,6 +62,7 @@ jobs:
           use-cache: false
           clean: true
           working-directory: ${{ inputs.working-directory }}
+          skip-build-runner: true
       - run: dart format --set-exit-if-changed .
 
   lint:
