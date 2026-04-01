@@ -45,6 +45,25 @@ jobs:
           build_number=$(date +%s)
           echo "build-number=$build_number" >> $GITHUB_OUTPUT
           echo "Build Number: $build_number"
+
+  format:
+    # runs-on: [self-hosted]
+    runs-on: default-k8s-runner
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: QuickBirdEng/actions/checkout-ssh@main
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
+          git-lfs: ${{ inputs.git-lfs }}
+      - uses: QuickBirdEng/actions/setup-flutter@main
+        with:
+          use-cache: false
+          clean: true
+          working-directory: ${{ inputs.working-directory }}
+      - run: dart format --set-exit-if-changed .
+
   lint:
     # runs-on: [self-hosted]
     runs-on: default-k8s-runner
@@ -144,7 +163,7 @@ jobs:
 
   build-ios:
     runs-on: [self-hosted, macOS]
-    needs: [generate-build-number, test, lint]
+    needs: [generate-build-number, test, lint, format]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -164,7 +183,7 @@ jobs:
 
   build-android:
     runs-on: [self-hosted]
-    needs: [generate-build-number, test, lint]
+    needs: [generate-build-number, test, lint, format]
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
