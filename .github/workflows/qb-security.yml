@@ -12,15 +12,15 @@ on:
         type: string
         default: '.'
       exclude-dirs:
-        description: 'Comma-separated directory names to exclude from the scan.'
+        description: 'Comma- or newline-separated directory names or paths to exclude from the scan.'
         type: string
         default: '.git,node_modules,.idea,build,dist'
       exclude-patterns:
-        description: 'Comma-separated file glob patterns to exclude from the scan.'
+        description: 'Comma- or newline-separated file glob patterns to exclude from the scan.'
         type: string
         default: '*.png,*.jpg,*.jpeg,*.gif,*.ico,*.pdf,*.zip,*.tar,*.gz,*.bin,*.dill'
       exclude-files:
-        description: 'Comma-separated relative file paths to exclude from the scan.'
+        description: 'Comma- or newline-separated relative file paths to exclude from the scan.'
         type: string
         default: ''
       fail-on-found:
