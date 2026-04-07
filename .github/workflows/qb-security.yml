@@ -19,6 +19,10 @@ on:
         description: 'Comma-separated file glob patterns to exclude from the scan.'
         type: string
         default: '*.png,*.jpg,*.jpeg,*.gif,*.ico,*.pdf,*.zip,*.tar,*.gz,*.bin,*.dill'
+      exclude-files:
+        description: 'Comma-separated relative file paths to exclude from the scan.'
+        type: string
+        default: ''
       fail-on-found:
         description: 'Fail the workflow when invisible Unicode characters are found.'
         type: boolean
@@ -37,4 +41,5 @@ jobs:
           search-directory: ${{ inputs.search-directory }}
           exclude-dirs: ${{ inputs.exclude-dirs }}
           exclude-patterns: ${{ inputs.exclude-patterns }}
+          exclude-files: ${{ inputs.exclude-files }}
           fail-on-found: ${{ inputs.fail-on-found }}
