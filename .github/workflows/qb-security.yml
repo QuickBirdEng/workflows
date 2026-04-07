@@ -11,18 +11,26 @@ on:
         description: 'Directory to scan recursively for invisible Unicode characters.'
         type: string
         default: '.'
-      exclude-dirs:
-        description: 'Comma- or newline-separated directory names or paths to exclude from the scan.'
+      exclude:
+        description: 'Newline- or comma-separated glob patterns for files and directories to exclude.'
         type: string
-        default: '.git,node_modules,.idea,build,dist'
-      exclude-patterns:
-        description: 'Comma- or newline-separated file glob patterns to exclude from the scan.'
-        type: string
-        default: '*.png,*.jpg,*.jpeg,*.gif,*.ico,*.pdf,*.zip,*.tar,*.gz,*.bin,*.dill'
-      exclude-files:
-        description: 'Comma- or newline-separated relative file paths to exclude from the scan.'
-        type: string
-        default: ''
+        default: |
+          .git/**
+          node_modules/**
+          .idea/**
+          build/**
+          dist/**
+          *.png
+          *.jpg
+          *.jpeg
+          *.gif
+          *.ico
+          *.pdf
+          *.zip
+          *.tar
+          *.gz
+          *.bin
+          *.dill
       fail-on-found:
         description: 'Fail the workflow when invisible Unicode characters are found.'
         type: boolean
@@ -39,7 +47,5 @@ jobs:
         uses: QuickBirdEng/actions/detect-invisible-unicode@main
         with:
           search-directory: ${{ inputs.search-directory }}
-          exclude-dirs: ${{ inputs.exclude-dirs }}
-          exclude-patterns: ${{ inputs.exclude-patterns }}
-          exclude-files: ${{ inputs.exclude-files }}
+          exclude: ${{ inputs.exclude }}
           fail-on-found: ${{ inputs.fail-on-found }}
