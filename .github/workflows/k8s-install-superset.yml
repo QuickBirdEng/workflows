@@ -54,6 +54,13 @@ jobs:
           DB_USER: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_USER
           DB_PASS: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_PASS
           DB_NAME: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/DB_NAME
+          SMTP_HOST: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SMTP_HOST
+          SMTP_PORT: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SMTP_PORT
+          SMTP_USER: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SMTP_USER
+          SMTP_PASSWORD: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SMTP_PASSWORD
+          SMTP_MAIL_FROM: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SMTP_MAIL_FROM
+          SMTP_SSL: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SMTP_SSL
+          SMTP_STARTTLS: op://${{ inputs.one_pw_vault }}/${{ inputs.one_pw_secrets_note_item }}/GENERAL/SMTP_STARTTLS
 
       - uses: azure/setup-kubectl@v4
       - uses: azure/k8s-set-context@v4
@@ -74,6 +81,13 @@ jobs:
             --from-literal=DB_USER="${{ env.DB_USER }}" \
             --from-literal=DB_PASSWORD="${{ env.DB_PASS }}" \
             --from-literal=DB_NAME="${{ env.DB_NAME }}" \
+            --from-literal=SMTP_HOST="${{ env.SMTP_HOST }}" \
+            --from-literal=SMTP_PORT="${{ env.SMTP_PORT }}" \
+            --from-literal=SMTP_USER="${{ env.SMTP_USER }}" \
+            --from-literal=SMTP_PASSWORD="${{ env.SMTP_PASSWORD }}" \
+            --from-literal=SMTP_MAIL_FROM="${{ env.SMTP_MAIL_FROM }}" \
+            --from-literal=SMTP_SSL="${{ env.SMTP_SSL }}" \
+            --from-literal=SMTP_STARTTLS="${{ env.SMTP_STARTTLS }}" \
             --namespace=${{ inputs.namespace }}
           kubectl label secret superset-env \
             app.kubernetes.io/managed-by=Helm \
@@ -244,14 +258,52 @@ jobs:
                 secretKeyRef:
                   name: superset-env
                   key: DB_NAME
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: SMTP_PORT
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: SMTP_USER
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: SMTP_PASSWORD
+            - name: SMTP_MAIL_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: SMTP_MAIL_FROM
+            - name: SMTP_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: SMTP_SSL
+            - name: SMTP_STARTTLS
+              valueFrom:
+                secretKeyRef:
+                  name: superset-env
+                  key: SMTP_STARTTLS
             - name: INGRESS_HOST
               value: "${{ inputs.ingress-host }}"
+            - name: PLAYWRIGHT_BROWSERS_PATH
+              value: /ms-playwright
 
           bootstrapScript: |
             #!/bin/bash
             pip install --prefix /app/.venv psycopg2-binary PyMySQL playwright
-            playwright install chromium
-            playwright install-deps chromium
+            PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+            PYTHONPATH="/app/.venv/lib/python${PY_VER}/site-packages" PLAYWRIGHT_BROWSERS_PATH=/ms-playwright python3 -m playwright install-deps chromium
+            PYTHONPATH="/app/.venv/lib/python${PY_VER}/site-packages" PLAYWRIGHT_BROWSERS_PATH=/ms-playwright python3 -m playwright install chromium
             if [ ! -f ~/bootstrap ]; then echo "Running Superset with uid 0" > ~/bootstrap; fi
 
           configOverrides:
@@ -267,7 +319,10 @@ jobs:
               import os
               from celery.schedules import crontab
 
-              FEATURE_FLAGS = {"ALERT_REPORTS": True}
+              FEATURE_FLAGS = {
+                  "ALERT_REPORTS": True,
+                  "PLAYWRIGHT_REPORTS_AND_THUMBNAILS": True,
+              }
 
               class CeleryConfig:
                   broker_url = "redis://superset-redis-master:6379/0"
@@ -286,13 +341,28 @@ jobs:
 
               CELERY_CONFIG = CeleryConfig
 
-              WEBDRIVER_TYPE = "chrome"
+              WEBDRIVER_OPTION_ARGS = [
+                  "--headless",
+                  "--no-sandbox",
+                  "--disable-gpu",
+                  "--disable-dev-shm-usage",
+                  "--disable-setuid-sandbox",
+              ]
               WEBDRIVER_BASEURL = "http://superset:8088/"
               _ingress_host = os.environ.get("INGRESS_HOST", "")
               WEBDRIVER_BASEURL_USER_FRIENDLY = (
                   f"https://{_ingress_host}/" if _ingress_host else WEBDRIVER_BASEURL
               )
               ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
+            smtp: |
+              import os
+              SMTP_HOST = os.environ.get("SMTP_HOST", "localhost")
+              SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
+              SMTP_SSL = os.environ.get("SMTP_SSL", "false").lower() == "true"
+              SMTP_STARTTLS = os.environ.get("SMTP_STARTTLS", "false").lower() == "true"
+              SMTP_USER = os.environ.get("SMTP_USER")
+              SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+              SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
 
           supersetCeleryBeat:
             enabled: true
