@@ -244,10 +244,14 @@ jobs:
                 secretKeyRef:
                   name: superset-env
                   key: DB_NAME
+            - name: INGRESS_HOST
+              value: "${{ inputs.ingress-host }}"
 
           bootstrapScript: |
             #!/bin/bash
-            pip install --prefix /app/.venv psycopg2-binary PyMySQL
+            pip install --prefix /app/.venv psycopg2-binary PyMySQL playwright
+            playwright install chromium
+            playwright install-deps chromium
             if [ ! -f ~/bootstrap ]; then echo "Running Superset with uid 0" > ~/bootstrap; fi
 
           configOverrides:
@@ -259,6 +263,39 @@ jobs:
                   f"@{os.environ['DB_HOST']}:{os.environ.get('DB_PORT', '5432')}"
                   f"/{os.environ['DB_NAME']}"
               )
+            alerts_reports: |
+              import os
+              from celery.schedules import crontab
+
+              FEATURE_FLAGS = {"ALERT_REPORTS": True}
+
+              class CeleryConfig:
+                  broker_url = "redis://superset-redis-master:6379/0"
+                  result_backend = "redis://superset-redis-master:6379/0"
+                  imports = ("superset.tasks.scheduler", "superset.sql_lab")
+                  beat_schedule = {
+                      "reports.scheduler": {
+                          "task": "reports.scheduler",
+                          "schedule": crontab(minute="*", hour="*"),
+                      },
+                      "reports.prune_log": {
+                          "task": "reports.prune_log",
+                          "schedule": crontab(minute=0, hour=0),
+                      },
+                  }
+
+              CELERY_CONFIG = CeleryConfig
+
+              WEBDRIVER_TYPE = "chrome"
+              WEBDRIVER_BASEURL = "http://superset:8088/"
+              _ingress_host = os.environ.get("INGRESS_HOST", "")
+              WEBDRIVER_BASEURL_USER_FRIENDLY = (
+                  f"https://{_ingress_host}/" if _ingress_host else WEBDRIVER_BASEURL
+              )
+              ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
+
+          supersetCeleryBeat:
+            enabled: true
 
           init:
             enabled: true
