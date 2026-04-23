@@ -25,7 +25,7 @@ jobs:
       - shell: bash
         run: git clean -ffdx
       - name: Generate All Missing SOUPs
-        uses: QuickBirdEng/actions/soup-generate-all-missing@main
+        uses: QuickBirdEng/actions/soup-generate-all-missing@make-own-soups-process-better
         with:
           excluded-requirements: ${{ inputs.excluded-requirements }}
           repository: ${{ github.event.repository.name }}
