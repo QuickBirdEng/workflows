@@ -154,7 +154,7 @@ jobs:
       - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        if: ${{ env.SENTRY_PROJECT != '' }}
+        if: ${{ env.SENTRY_PROJECT != '' && steps.publish-ios.outcome == 'success' }}
         with:
           url: ${{ secrets.SENTRY_URL }}
           organization: ${{ secrets.SENTRY_ORG }}
