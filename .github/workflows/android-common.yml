@@ -13,6 +13,10 @@ on:
         description: "Checkout the project with git lfs"
         type: boolean
         default: false
+      git-submodules:
+        description: "Checkout the project with git submodules"
+        type: boolean
+        default: false
       upload-apk:
         description: "Upload the apk to the Apps @ QuickBird"
         type: boolean
@@ -29,6 +33,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           lfs: ${{ inputs.git-lfs }}
+          submodules: ${{ inputs.git-submodules }}
           fetch-depth: 0
       - uses: QuickBirdEng/actions/setup-android-for-build@main
       - name: Setup API Key (if secret is set)
@@ -46,6 +51,7 @@ jobs:
           with:
             fetch-depth: 0
             lfs: ${{ inputs.git-lfs }}
+            submodules: ${{ inputs.git-submodules }}
         - run: echo "BuildForRelease=true" >> $GITHUB_ENV
         - uses: QuickBirdEng/actions/setup-version@main
           with:
