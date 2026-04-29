@@ -61,6 +61,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+          git-submodules: ${{ inputs.git-submodules }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           use-cache: false
@@ -80,6 +81,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+          git-submodules: ${{ inputs.git-submodules }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           use-cache: false
@@ -100,6 +102,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+          git-submodules: ${{ inputs.git-submodules }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           use-cache: false
@@ -119,6 +122,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+          git-submodules: ${{ inputs.git-submodules }}
       - uses: QuickBirdEng/actions/setup-flutter@main
         with:
           use-cache: false
@@ -150,6 +154,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+          git-submodules: ${{ inputs.git-submodules }}
       - uses: QuickBirdEng/actions/setup-environment@main
       - uses: QuickBirdEng/actions/setup-flutter@main
         if: ${{ env.CODE_COVERAGE != '' && env.CODE_COVERAGE != 0 }}
