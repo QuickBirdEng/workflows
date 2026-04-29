@@ -29,6 +29,10 @@ on:
         description: "Checkout the project with git lfs"
         type: boolean
         default: false
+      git-submodules:
+        description: "Checkout the project with git submodules"
+        type: boolean
+        default: false
       obfuscate:
         description: "Should obfuscate the dart code?"
         type: boolean
@@ -99,6 +103,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+          git-submodules: ${{ inputs.git-submodules }}
       - uses: QuickBirdEng/actions/publish-android@main
         id: publish-android
         with:
@@ -137,6 +142,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+          git-submodules: ${{ inputs.git-submodules }}
       - uses: QuickBirdEng/actions/publish-ios@main
         id: publish-ios
         with:
@@ -189,6 +195,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           git-lfs: ${{ inputs.git-lfs }}
+          git-submodules: ${{ inputs.git-submodules }}
       - uses: QuickBirdEng/actions/setup-android@main
         with:
           key-store-file-content: ${{ secrets.ANDROID_KEYSTORE_FILE_CONTENT }}
