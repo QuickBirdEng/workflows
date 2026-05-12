@@ -322,6 +322,7 @@ jobs:
               FEATURE_FLAGS = {
                   "ALERT_REPORTS": True,
                   "PLAYWRIGHT_REPORTS_AND_THUMBNAILS": True,
+                  "ENABLE_SUPERSET_META_DB": True,
               }
 
               class CeleryConfig:
