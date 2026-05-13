@@ -4,11 +4,11 @@ on:
   workflow_call:
     inputs:
       runs-on:
-        description: 'Runner label for the scan job.'
+        description: 'Runner label for the scan jobs.'
         type: string
         default: 'default-k8s-runner'
       search-directory:
-        description: 'Directory to scan recursively for invisible Unicode characters.'
+        description: 'Directory to scan recursively.'
         type: string
         default: '.'
       exclude:
@@ -18,7 +18,21 @@ on:
         type: string
         default: ''
       fail-on-found:
-        description: 'Fail the workflow when invisible Unicode characters are found.'
+        description: 'Fail the workflow when any scan reports findings.'
+        type: boolean
+        default: true
+      js-minimum-release-age-minutes:
+        description: 'Required quarantine period for newly published package versions (pnpm `minimumReleaseAge`). Default 10080 (7 days). Set to 0 to disable.'
+        type: number
+        default: 10080
+      js-allow-builds:
+        description: |
+          Newline- or comma-separated list of packages allowed to run install/lifecycle scripts.
+          Empty (default) means NO package may run install scripts.
+        type: string
+        default: ''
+      js-require-block-exotic-subdeps:
+        description: 'Require every project to block git/tarball/file subdeps (pnpm setting + lockfile scan for all managers).'
         type: boolean
         default: true
 
@@ -34,4 +48,20 @@ jobs:
         with:
           search-directory: ${{ inputs.search-directory }}
           exclude: ${{ inputs.exclude }}
+          fail-on-found: ${{ inputs.fail-on-found }}
+
+  js-supply-chain-scan:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JS Supply-Chain Check
+        uses: QuickBirdEng/actions/js-supply-chain-check@main
+        with:
+          search-directory: ${{ inputs.search-directory }}
+          exclude: ${{ inputs.exclude }}
+          minimum-release-age-minutes: ${{ inputs.js-minimum-release-age-minutes }}
+          allow-builds: ${{ inputs.js-allow-builds }}
+          require-block-exotic-subdeps: ${{ inputs.js-require-block-exotic-subdeps }}
           fail-on-found: ${{ inputs.fail-on-found }}

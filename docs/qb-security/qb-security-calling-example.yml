@@ -6,6 +6,13 @@ on:
 jobs:
   security:
     uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
+    # with:
+    #   # Tighten the package quarantine to 14 days for this repo.
+    #   js-minimum-release-age-minutes: 20160
+    #   # Permit specific packages to run install scripts (e.g. native-build deps).
+    #   js-allow-builds: |
+    #     esbuild
+    #     sharp
 
   trufflehog-scan:
     runs-on: default-k8s-runner
