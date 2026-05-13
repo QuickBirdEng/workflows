@@ -21,6 +21,14 @@ on:
         description: 'Fail the workflow when any scan reports findings.'
         type: boolean
         default: true
+      enable-unicode-scan:
+        description: 'Run the invisible-Unicode detection job. Set to false to skip this scan entirely.'
+        type: boolean
+        default: true
+      enable-js-supply-chain-scan:
+        description: 'Run the JS supply-chain hardening check (npm/yarn/pnpm). Set to false to skip this scan entirely.'
+        type: boolean
+        default: true
       js-minimum-release-age-minutes:
         description: 'Required quarantine period for newly published package versions (pnpm `minimumReleaseAge`). Default 10080 (7 days). Set to 0 to disable.'
         type: number
@@ -31,10 +39,23 @@ on:
           Empty (default) means NO package may run install scripts.
         type: string
         default: ''
-      js-require-block-exotic-subdeps:
-        description: 'Require every project to block git/tarball/file subdeps (pnpm setting + lockfile scan for all managers).'
+      js-check-install-scripts:
+        description: 'Run the install-scripts (allowBuilds) sub-check. Set to false to skip it while still enforcing minimumReleaseAge and blockExoticSubdeps.'
         type: boolean
         default: true
+      js-require-block-exotic-subdeps:
+        description: 'Require every project to block git/tarball/file subdeps (pnpm setting + lockfile scan for all managers). Set to false to skip this sub-check.'
+        type: boolean
+        default: true
+      js-minimum-release-age-exclude:
+        description: |
+          Newline- or comma-separated list of package names allowed to bypass the minimumReleaseAge policy
+          (e.g. for an urgent security patch newer than the quarantine threshold). The check verifies that
+          each project's native exclude list is a SUBSET of this allow-list — projects can't unilaterally
+          exempt packages the workflow caller hasn't authorised. Each exemption must be reviewed and
+          merged via PR to security.yml.
+        type: string
+        default: ''
       js-enforce-release-age-via-registry:
         description: |
           Opt-in CI-time band-aid for yarn/npm projects that cannot migrate to pnpm 10+ immediately.
@@ -54,6 +75,7 @@ on:
 
 jobs:
   unicode-security-scan:
+    if: ${{ inputs.enable-unicode-scan }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
@@ -67,6 +89,7 @@ jobs:
           fail-on-found: ${{ inputs.fail-on-found }}
 
   js-supply-chain-scan:
+    if: ${{ inputs.enable-js-supply-chain-scan }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
@@ -78,7 +101,9 @@ jobs:
           search-directory: ${{ inputs.search-directory }}
           exclude: ${{ inputs.exclude }}
           minimum-release-age-minutes: ${{ inputs.js-minimum-release-age-minutes }}
+          minimum-release-age-exclude: ${{ inputs.js-minimum-release-age-exclude }}
           allow-builds: ${{ inputs.js-allow-builds }}
+          check-install-scripts: ${{ inputs.js-check-install-scripts }}
           require-block-exotic-subdeps: ${{ inputs.js-require-block-exotic-subdeps }}
           enforce-release-age-via-registry: ${{ inputs.js-enforce-release-age-via-registry }}
           pnpm-min-version: ${{ inputs.js-pnpm-min-version }}

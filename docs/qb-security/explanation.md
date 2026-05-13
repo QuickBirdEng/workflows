@@ -155,9 +155,13 @@ All inputs are optional. Defaults are intentionally broad so most repos need no 
 | `search-directory` | string | `.` | Root directory for both scans |
 | `exclude` | string | `''` | Newline- or comma-separated glob patterns to skip (in addition to the always-excluded `.git/**`, `node_modules/**`, `.idea/**`, `build/**`, `dist/**`, common binary types) |
 | `fail-on-found` | boolean | `true` | Fail the check when any scan reports findings |
-| `js-minimum-release-age-minutes` | number | `10080` | Required quarantine for new package versions, in minutes (7 days). Set to `0` to disable. |
+| `enable-unicode-scan` | boolean | `true` | Set to `false` to skip the invisible-Unicode scan entirely |
+| `enable-js-supply-chain-scan` | boolean | `true` | Set to `false` to skip the JS supply-chain scan entirely |
+| `js-minimum-release-age-minutes` | number | `10080` | Required quarantine for new package versions, in minutes (7 days). Set to `0` to disable this sub-check. |
+| `js-minimum-release-age-exclude` | string | `''` | Newline- or comma-separated list of packages allowed to bypass the age gate (urgent security patches). Project-level exclude lists are required to be a subset of this. |
 | `js-allow-builds` | string | `''` | Newline- or comma-separated list of packages allowed to run install scripts. Empty = none allowed. |
-| `js-require-block-exotic-subdeps` | boolean | `true` | Require pnpm `blockExoticSubdeps` AND scan every lockfile for non-registry resolutions |
+| `js-check-install-scripts` | boolean | `true` | Set to `false` to skip just the install-scripts sub-check. |
+| `js-require-block-exotic-subdeps` | boolean | `true` | Require pnpm `blockExoticSubdeps` AND scan every lockfile for non-registry resolutions. Set to `false` to skip this sub-check. |
 | `js-enforce-release-age-via-registry` | boolean | `false` | Opt-in CI-time band-aid for yarn/npm projects that cannot migrate to pnpm 10+ immediately. When false (default), yarn/npm projects with `minimum-release-age > 0` hard-fail with a migration prompt. |
 | `js-pnpm-min-version` | string | `10.0.0` | Minimum pnpm version where the recommended settings actually take effect. Projects pinning an older pnpm get a top-level error. |
 | `js-yarn-min-version` | string | `4.14.0` | Minimum yarn version with native install-time enforcement (`npmMinimalAgeGate` + `approvedGitRepositories`). Yarn 1.x and yarn-berry below this hard-fail with a migration prompt. |
@@ -204,3 +208,46 @@ jobs:
         esbuild
         sharp
 ```
+
+**Disable individual sub-checks (per-project):**
+```yaml
+jobs:
+  security:
+    uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
+    with:
+      # Skip a whole scan job:
+      enable-unicode-scan: false             # don't run the Unicode scan at all
+      # Or just one of the JS sub-checks:
+      js-minimum-release-age-minutes: 0      # turn off the age gate
+      js-require-block-exotic-subdeps: false # turn off the exotic-subdeps check
+      js-check-install-scripts: false        # turn off the install-scripts check
+```
+
+**Approve an urgent security patch newer than the quarantine threshold:**
+
+Scenario: a package has a CVE fix released 1 day ago and the policy requires 7 days. Add the package to both the workflow's allow-list and the project's native exclude list. Each is reviewed via PR.
+
+```yaml
+# .github/workflows/security.yml (workflow caller)
+jobs:
+  security:
+    uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
+    with:
+      js-minimum-release-age-exclude: |
+        lodash    # CVE-2026-XXXX, reviewed by @<reviewer>
+```
+
+```yaml
+# .yarnrc.yml (project) — yarn 4.10+
+npmMinimumReleaseAgeExclude:
+  - lodash
+```
+
+or for pnpm 10+:
+
+```ini
+# .npmrc (project)
+minimum-release-age-exclude=lodash
+```
+
+The check verifies the project's exclude list is a subset of the workflow's. If a project tries to exempt a package the workflow hasn't authorised, the check fails with a clear error pointing at the security.yml that needs to be updated.
