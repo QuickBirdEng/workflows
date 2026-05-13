@@ -47,15 +47,6 @@ on:
         description: 'Require every project to block git/tarball/file subdeps (pnpm setting + lockfile scan for all managers). Set to false to skip this sub-check.'
         type: boolean
         default: true
-      js-minimum-release-age-exclude:
-        description: |
-          Newline- or comma-separated list of package names allowed to bypass the minimumReleaseAge policy
-          (e.g. for an urgent security patch newer than the quarantine threshold). The check verifies that
-          each project's native exclude list is a SUBSET of this allow-list — projects can't unilaterally
-          exempt packages the workflow caller hasn't authorised. Each exemption must be reviewed and
-          merged via PR to security.yml.
-        type: string
-        default: ''
       js-enforce-release-age-via-registry:
         description: |
           Opt-in CI-time band-aid for yarn/npm projects that cannot migrate to pnpm 10+ immediately.
@@ -101,7 +92,6 @@ jobs:
           search-directory: ${{ inputs.search-directory }}
           exclude: ${{ inputs.exclude }}
           minimum-release-age-minutes: ${{ inputs.js-minimum-release-age-minutes }}
-          minimum-release-age-exclude: ${{ inputs.js-minimum-release-age-exclude }}
           allow-builds: ${{ inputs.js-allow-builds }}
           check-install-scripts: ${{ inputs.js-check-install-scripts }}
           require-block-exotic-subdeps: ${{ inputs.js-require-block-exotic-subdeps }}
