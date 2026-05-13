@@ -239,7 +239,7 @@ jobs:
 
 ```yaml
 # .yarnrc.yml (project) — yarn 4.10+
-npmMinimumReleaseAgeExclude:
+npmPreapprovedPackages:
   - lodash
 ```
 
