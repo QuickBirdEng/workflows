@@ -29,11 +29,41 @@ The recommended pnpm settings (`minimumReleaseAge`, `blockExoticSubdeps`) only t
 
 There is no version gate for npm or yarn — `ignore-scripts` / `enableScripts: false` have been supported for the lifetime of those tools.
 
-#### Enforcing minimumReleaseAge for npm / yarn (no native setting)
+#### Enforcing minimumReleaseAge — yarn/npm have no native setting
 
-npm and yarn have no native `minimumReleaseAge` equivalent. By default the action reports an informational warning for npm/yarn projects, explaining that the policy cannot be enforced at install time.
+Only pnpm 10+ enforces `minimumReleaseAge` at install time. yarn (1.x and Berry) and npm have **no equivalent**: there is no `.yarnrc` / `.npmrc` flag that makes those package managers refuse a too-recent install. Anyone cloning the repo and running `yarn install` / `npm install` can pull a freshly-published — and possibly compromised — version of any dependency.
 
-To **actually** enforce it on npm/yarn (and as a backstop for pnpm), enable the opt-in registry-scan mode:
+So the action **hard-fails** yarn/npm projects that set `js-minimum-release-age-minutes > 0`, with a message pointing at the only real fix: migrate the project to pnpm 10+.
+
+Migration is usually one command:
+
+```bash
+npx @pnpm/exe@latest import   # imports yarn.lock / package-lock.json → pnpm-lock.yaml
+```
+
+then update `package.json`:
+
+```jsonc
+{
+  "packageManager": "pnpm@10.x.y",
+  "pnpm": {
+    "onlyBuiltDependencies": []
+  }
+}
+```
+
+and `.npmrc`:
+
+```ini
+minimum-release-age=10080
+block-exotic-subdeps=true
+```
+
+Update the CI install step to `pnpm install --frozen-lockfile` and delete the old lockfile.
+
+##### Escape hatch: CI-only registry scan (not recommended)
+
+For projects that cannot migrate immediately, an opt-in CI band-aid is available:
 
 ```yaml
 jobs:
@@ -43,7 +73,9 @@ jobs:
       js-enforce-release-age-via-registry: true
 ```
 
-When enabled, the action parses every lockfile, looks up each (package, version) pair against `registry.npmjs.org`, and fails the PR for any package version published less than the threshold ago. This is opt-in because it makes network calls (one per resolved dependency) and adds noticeable CI time on large lockfiles.
+When enabled, the action scans every lockfile entry against `registry.npmjs.org` at PR time and fails on any version published less than the threshold ago. This gates the merged code so anyone cloning `main` is safe — but it **does NOT** protect a developer who runs `yarn install` on a local branch before opening the PR. For that, only pnpm 10+ works. Use this as a stopgap during a migration, not as the permanent answer.
+
+Setting `js-minimum-release-age-minutes: 0` disables the policy entirely.
 
 A minimal pnpm project complies with the defaults by adding:
 
@@ -106,7 +138,7 @@ All inputs are optional. Defaults are intentionally broad so most repos need no 
 | `js-minimum-release-age-minutes` | number | `10080` | Required quarantine for new package versions, in minutes (7 days). Set to `0` to disable. |
 | `js-allow-builds` | string | `''` | Newline- or comma-separated list of packages allowed to run install scripts. Empty = none allowed. |
 | `js-require-block-exotic-subdeps` | boolean | `true` | Require pnpm `blockExoticSubdeps` AND scan every lockfile for non-registry resolutions |
-| `js-enforce-release-age-via-registry` | boolean | `false` | Opt-in: enforce `minimumReleaseAge` for npm/yarn/pnpm by looking up each lockfile entry's publish date against the npm registry. Adds network calls per dependency. |
+| `js-enforce-release-age-via-registry` | boolean | `false` | Opt-in CI-time band-aid for yarn/npm projects that cannot migrate to pnpm 10+ immediately. When false (default), yarn/npm projects with `minimum-release-age > 0` hard-fail with a migration prompt. |
 | `js-pnpm-min-version` | string | `10.0.0` | Minimum pnpm version where the recommended settings actually take effect. Projects pinning an older pnpm get a top-level error. |
 
 ## Typical overrides

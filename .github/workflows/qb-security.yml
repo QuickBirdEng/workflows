@@ -36,7 +36,11 @@ on:
         type: boolean
         default: true
       js-enforce-release-age-via-registry:
-        description: 'When true, enforce minimumReleaseAge for npm/yarn/pnpm by querying the npm registry for each lockfile entry. Adds network calls; opt-in.'
+        description: |
+          Opt-in CI-time band-aid for yarn/npm projects that cannot migrate to pnpm 10+ immediately.
+          When true, scans lockfiles against the npm registry to enforce minimumReleaseAge at PR time.
+          Does not protect dev machines running yarn install on local branches.
+          Default false — yarn/npm projects will hard-fail with a migration-to-pnpm-10 prompt.
         type: boolean
         default: false
       js-pnpm-min-version:
