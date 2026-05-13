@@ -47,6 +47,10 @@ on:
         description: 'Minimum pnpm version where the recommended settings take effect. Projects pinning an older pnpm get a top-level error.'
         type: string
         default: '10.0.0'
+      js-yarn-min-version:
+        description: 'Minimum yarn version with native install-time enforcement (npmMinimalAgeGate + approvedGitRepositories). Yarn 1.x and yarn-berry below this hard-fail with a migration prompt.'
+        type: string
+        default: '4.14.0'
 
 jobs:
   unicode-security-scan:
@@ -78,4 +82,5 @@ jobs:
           require-block-exotic-subdeps: ${{ inputs.js-require-block-exotic-subdeps }}
           enforce-release-age-via-registry: ${{ inputs.js-enforce-release-age-via-registry }}
           pnpm-min-version: ${{ inputs.js-pnpm-min-version }}
+          yarn-min-version: ${{ inputs.js-yarn-min-version }}
           fail-on-found: ${{ inputs.fail-on-found }}

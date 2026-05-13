@@ -25,30 +25,48 @@ Every finding emits both a PR annotation and a detailed log block with **what** 
 
 #### Package manager version requirements
 
-The recommended pnpm settings (`minimumReleaseAge`, `blockExoticSubdeps`) only take effect on **pnpm ≥ 10.0**. Older pnpm versions silently ignore these keys — the .npmrc / pnpm-workspace.yaml file looks correct but the protection isn't active at install time. The action reads each project's `packageManager` field in `package.json` (also `.tool-versions`, `engines.pnpm`) and emits a top-level error when a project pins a pnpm version below the threshold, with instructions to bump it. The minimum version is configurable via `js-pnpm-min-version`.
+Two managers now have native install-time enforcement of the full policy:
 
-There is no version gate for npm or yarn — `ignore-scripts` / `enableScripts: false` have been supported for the lifetime of those tools.
+| Manager | Minimum version | Settings honored |
+|---|---|---|
+| pnpm | **10.0+** | `minimumReleaseAge`, `blockExoticSubdeps`, `onlyBuiltDependencies` |
+| yarn | **4.14+** | `npmMinimalAgeGate` (4.10+), `approvedGitRepositories` (4.14+), `enableScripts: false` |
 
-#### Enforcing minimumReleaseAge — yarn/npm have no native setting
+Older versions parse the settings but silently ignore them — the config file looks correct, but the install-time behaviour is unchanged. The action reads each project's `packageManager` field in `package.json` and emits a top-level error when a project pins a version below the threshold. The minimum versions are configurable via `js-pnpm-min-version` and `js-yarn-min-version`.
 
-Only pnpm 10+ enforces `minimumReleaseAge` at install time. yarn (1.x and Berry) and npm have **no equivalent**: there is no `.yarnrc` / `.npmrc` flag that makes those package managers refuse a too-recent install. Anyone cloning the repo and running `yarn install` / `npm install` can pull a freshly-published — and possibly compromised — version of any dependency.
+yarn 1.x (classic) and npm < 11.10 have no native equivalent. Projects on those managers hard-fail when `js-minimum-release-age-minutes > 0` with a migration prompt offering yarn 4.14+ OR pnpm 10+ as the two viable paths.
 
-So the action **hard-fails** yarn/npm projects that set `js-minimum-release-age-minutes > 0`, with a message pointing at the only real fix: migrate the project to pnpm 10+.
+#### Enforcing minimumReleaseAge — two native paths
 
-Migration is usually one command:
+The two managers that enforce minimum-release-age at install time:
+
+**Yarn 4.14+** (least disruptive for yarn projects):
 
 ```bash
-npx @pnpm/exe@latest import   # imports yarn.lock / package-lock.json → pnpm-lock.yaml
+corepack enable
+yarn set version 4.14.0
 ```
 
-then update `package.json`:
+then in `.yarnrc.yml`:
+
+```yaml
+npmMinimalAgeGate: 10080         # 7 days, in minutes
+approvedGitRepositories: []      # empty = block all git/tarball subdeps
+enableScripts: false             # disable install scripts
+```
+
+**Pnpm 10+** (full pnpm parity):
+
+```bash
+npx @pnpm/exe@latest import      # imports yarn.lock / package-lock.json → pnpm-lock.yaml
+```
+
+then in `package.json`:
 
 ```jsonc
 {
   "packageManager": "pnpm@10.x.y",
-  "pnpm": {
-    "onlyBuiltDependencies": []
-  }
+  "pnpm": { "onlyBuiltDependencies": [] }
 }
 ```
 
@@ -60,6 +78,8 @@ block-exotic-subdeps=true
 ```
 
 Update the CI install step to `pnpm install --frozen-lockfile` and delete the old lockfile.
+
+Projects on yarn 1.x, yarn-berry below 4.14, or npm (which currently has no widely-supported native setting) **hard-fail** when `js-minimum-release-age-minutes > 0` — the action emits an error pointing at the two migration paths above.
 
 ##### Escape hatch: CI-only registry scan (not recommended)
 
@@ -140,6 +160,7 @@ All inputs are optional. Defaults are intentionally broad so most repos need no 
 | `js-require-block-exotic-subdeps` | boolean | `true` | Require pnpm `blockExoticSubdeps` AND scan every lockfile for non-registry resolutions |
 | `js-enforce-release-age-via-registry` | boolean | `false` | Opt-in CI-time band-aid for yarn/npm projects that cannot migrate to pnpm 10+ immediately. When false (default), yarn/npm projects with `minimum-release-age > 0` hard-fail with a migration prompt. |
 | `js-pnpm-min-version` | string | `10.0.0` | Minimum pnpm version where the recommended settings actually take effect. Projects pinning an older pnpm get a top-level error. |
+| `js-yarn-min-version` | string | `4.14.0` | Minimum yarn version with native install-time enforcement (`npmMinimalAgeGate` + `approvedGitRepositories`). Yarn 1.x and yarn-berry below this hard-fail with a migration prompt. |
 
 ## Typical overrides
 
