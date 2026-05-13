@@ -35,6 +35,14 @@ on:
         description: 'Require every project to block git/tarball/file subdeps (pnpm setting + lockfile scan for all managers).'
         type: boolean
         default: true
+      js-enforce-release-age-via-registry:
+        description: 'When true, enforce minimumReleaseAge for npm/yarn/pnpm by querying the npm registry for each lockfile entry. Adds network calls; opt-in.'
+        type: boolean
+        default: false
+      js-pnpm-min-version:
+        description: 'Minimum pnpm version where the recommended settings take effect. Projects pinning an older pnpm get a top-level error.'
+        type: string
+        default: '10.0.0'
 
 jobs:
   unicode-security-scan:
@@ -64,4 +72,6 @@ jobs:
           minimum-release-age-minutes: ${{ inputs.js-minimum-release-age-minutes }}
           allow-builds: ${{ inputs.js-allow-builds }}
           require-block-exotic-subdeps: ${{ inputs.js-require-block-exotic-subdeps }}
+          enforce-release-age-via-registry: ${{ inputs.js-enforce-release-age-via-registry }}
+          pnpm-min-version: ${{ inputs.js-pnpm-min-version }}
           fail-on-found: ${{ inputs.fail-on-found }}

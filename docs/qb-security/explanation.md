@@ -21,7 +21,29 @@ Walks the repo, identifies every JS project by its lockfile (`pnpm-lock.yaml` / 
 2. **`blockExoticSubdeps`** — rejects subdependencies pulled from anything other than the npm registry (git URLs, tarball URLs, github: shortcuts, file paths). For pnpm this is a setting; for all managers the action also scans the lockfile and reports each exotic resolution.
 3. **`allowBuilds`** (install-script allowlist) — install scripts run by default and have been the delivery mechanism for ua-parser-js, event-stream, nx, and many other attacks. The check requires `pnpm.onlyBuiltDependencies` (pnpm) / `ignore-scripts=true` (npm, yarn classic) / `enableScripts: false` (yarn berry). Specific packages can be whitelisted via the `js-allow-builds` input.
 
-Every finding emits both a PR annotation and a detailed log block with **what** was found, **why** it matters, and a manager-specific **how to fix** snippet. If no JS lockfiles are present, the job logs that and exits cleanly.
+Every finding emits both a PR annotation and a detailed log block with **what** was found, **why** it matters, and a manager-specific **how to fix** snippet. At the bottom of the log an **ACTION REQUIRED** section aggregates every concrete edit, grouped by target file, so a developer can scroll to the bottom and see the exact list of changes needed to clear the check. If no JS lockfiles are present, the job logs that and exits cleanly.
+
+#### Package manager version requirements
+
+The recommended pnpm settings (`minimumReleaseAge`, `blockExoticSubdeps`) only take effect on **pnpm ≥ 10.0**. Older pnpm versions silently ignore these keys — the .npmrc / pnpm-workspace.yaml file looks correct but the protection isn't active at install time. The action reads each project's `packageManager` field in `package.json` (also `.tool-versions`, `engines.pnpm`) and emits a top-level error when a project pins a pnpm version below the threshold, with instructions to bump it. The minimum version is configurable via `js-pnpm-min-version`.
+
+There is no version gate for npm or yarn — `ignore-scripts` / `enableScripts: false` have been supported for the lifetime of those tools.
+
+#### Enforcing minimumReleaseAge for npm / yarn (no native setting)
+
+npm and yarn have no native `minimumReleaseAge` equivalent. By default the action reports an informational warning for npm/yarn projects, explaining that the policy cannot be enforced at install time.
+
+To **actually** enforce it on npm/yarn (and as a backstop for pnpm), enable the opt-in registry-scan mode:
+
+```yaml
+jobs:
+  security:
+    uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
+    with:
+      js-enforce-release-age-via-registry: true
+```
+
+When enabled, the action parses every lockfile, looks up each (package, version) pair against `registry.npmjs.org`, and fails the PR for any package version published less than the threshold ago. This is opt-in because it makes network calls (one per resolved dependency) and adds noticeable CI time on large lockfiles.
 
 A minimal pnpm project complies with the defaults by adding:
 
@@ -84,6 +106,8 @@ All inputs are optional. Defaults are intentionally broad so most repos need no 
 | `js-minimum-release-age-minutes` | number | `10080` | Required quarantine for new package versions, in minutes (7 days). Set to `0` to disable. |
 | `js-allow-builds` | string | `''` | Newline- or comma-separated list of packages allowed to run install scripts. Empty = none allowed. |
 | `js-require-block-exotic-subdeps` | boolean | `true` | Require pnpm `blockExoticSubdeps` AND scan every lockfile for non-registry resolutions |
+| `js-enforce-release-age-via-registry` | boolean | `false` | Opt-in: enforce `minimumReleaseAge` for npm/yarn/pnpm by looking up each lockfile entry's publish date against the npm registry. Adds network calls per dependency. |
+| `js-pnpm-min-version` | string | `10.0.0` | Minimum pnpm version where the recommended settings actually take effect. Projects pinning an older pnpm get a top-level error. |
 
 ## Typical overrides
 
