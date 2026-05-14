@@ -2,6 +2,8 @@ name: Security
 
 on:
   pull_request:
+  push:
+    branches: [main]
 
 jobs:
   security:
@@ -21,5 +23,9 @@ jobs:
         with:
           fetch-depth: 0
       - uses: QuickBirdEng/actions/trufflehog-scan@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # PR events: scan the PR diff. Push events: scan only the new commits
+          # (`github.event.before` is the SHA before this push). The trufflehog-scan
+          # action handles the zero SHA (first push to a brand-new branch) by
+          # falling back to HEAD~1 or full history.
+          base: ${{ github.event.pull_request.base.sha || github.event.before }}
