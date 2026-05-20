@@ -30,9 +30,9 @@ on:
         type: boolean
         default: true
       js-minimum-release-age-minutes:
-        description: 'Required quarantine period for newly published package versions (pnpm `minimumReleaseAge`). Default 10080 (7 days). Set to 0 to disable.'
+        description: 'Required quarantine period for newly published package versions (pnpm `minimumReleaseAge`). Default 4320 (3 days). Set to 0 to disable.'
         type: number
-        default: 10080
+        default: 4320
       js-allow-builds:
         description: |
           Newline- or comma-separated list of packages allowed to run install/lifecycle scripts.
