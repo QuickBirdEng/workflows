@@ -63,6 +63,22 @@ on:
         description: 'Minimum yarn version with native install-time enforcement (npmMinimalAgeGate + approvedGitRepositories). Yarn 1.x and yarn-berry below this hard-fail with a migration prompt.'
         type: string
         default: '4.14.0'
+      enable-trufflehog-scan:
+        description: 'Run the TruffleHog secret scan. Set to false to skip.'
+        type: boolean
+        default: true
+      trufflehog-base:
+        description: 'Base commit SHA or ref for the TruffleHog scan. Leave empty to scan the full git history.'
+        type: string
+        default: ''
+      trufflehog-exclude-paths:
+        description: 'Path (in the caller repo) to a file listing paths to exclude from the TruffleHog scan.'
+        type: string
+        default: ''
+      trufflehog-include-paths:
+        description: 'Path (in the caller repo) to a file listing paths to include in the TruffleHog scan.'
+        type: string
+        default: ''
 
 jobs:
   unicode-security-scan:
@@ -99,3 +115,19 @@ jobs:
           pnpm-min-version: ${{ inputs.js-pnpm-min-version }}
           yarn-min-version: ${{ inputs.js-yarn-min-version }}
           fail-on-found: ${{ inputs.fail-on-found }}
+
+  trufflehog-scan:
+    if: ${{ inputs.enable-trufflehog-scan }}
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog Secret Scan
+        uses: QuickBirdEng/actions/trufflehog-scan@main
+        with:
+          base: ${{ inputs.trufflehog-base }}
+          exclude-paths: ${{ inputs.trufflehog-exclude-paths }}
+          include-paths: ${{ inputs.trufflehog-include-paths }}
