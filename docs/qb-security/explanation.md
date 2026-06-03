@@ -116,7 +116,19 @@ block-exotic-subdeps=true
 
 ### Secret scanning (TruffleHog)
 
-Scans git commits for verified secrets using [TruffleHog OSS](https://github.com/trufflesecurity/trufflehog). By default the full repository history is scanned; set `trufflehog-base` to limit the scan to a specific commit range (e.g. the commits introduced by a PR or push). Only **verified** secrets (credentials that TruffleHog can confirm are active against the real service) are reported, which eliminates false positives from example keys or already-rotated credentials. Findings are emitted as inline PR annotations.
+Scans git commits for verified secrets using [TruffleHog OSS](https://github.com/trufflesecurity/trufflehog). Only **verified** secrets (credentials that TruffleHog can confirm are active against the real service) are reported, which eliminates false positives from example keys or already-rotated credentials. Findings are emitted as inline PR annotations.
+
+By default the **full repository history** is scanned on every run. Pass `trufflehog-base` to limit the scan to commits reachable from HEAD but not from the base — equivalent to `git log <base>..HEAD`. For a PR workflow this means only the commits introduced by the PR are checked:
+
+```yaml
+jobs:
+  security:
+    uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
+    with:
+      trufflehog-base: ${{ github.event.pull_request.base.sha || github.event.before }}
+```
+
+`github.event.pull_request.base.sha` is the tip of the target branch on a `pull_request` event; `github.event.before` is the SHA before the push on a `push` event.
 
 ## Usage
 
