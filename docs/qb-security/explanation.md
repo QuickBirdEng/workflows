@@ -41,7 +41,7 @@ No secrets are required. All three scans run as parallel jobs inside the workflo
       fail-on-found: false
 ```
 
-**Exclude paths from all file-based scans:**
+**Exclude paths from the Unicode and JS supply-chain scans** (not TruffleHog — use `trufflehog-exclude-paths` for that):
 ```yaml
     with:
       exclude: |
@@ -233,8 +233,8 @@ All inputs are optional.
 | Input | Type | Default | Description |
 |---|---|---|---|
 | `runs-on` | string | `default-k8s-runner` | Runner label for the scan jobs |
-| `search-directory` | string | `.` | Root directory for all file-based scans |
-| `exclude` | string | `''` | Newline- or comma-separated glob patterns to skip (always excluded: `.git/**`, `node_modules/**`, `.idea/**`, `build/**`, `dist/**`, common binary types) |
+| `search-directory` | string | `.` | Root directory for the Unicode and JS supply-chain scans |
+| `exclude` | string | `''` | Newline- or comma-separated glob patterns to skip in the Unicode and JS supply-chain scans (always excluded: `.git/**`, `node_modules/**`, `.idea/**`, `build/**`, `dist/**`, common binary types) |
 | `fail-on-found` | boolean | `true` | Fail the check when any scan reports findings |
 | `enable-trufflehog-scan` | boolean | `true` | Set to `false` to skip the TruffleHog scan entirely |
 | `trufflehog-base` | string | `''` | Base commit SHA or ref. Leave empty to scan the full git history |
