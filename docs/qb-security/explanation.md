@@ -1,6 +1,6 @@
 # QB Security
 
-A reusable workflow that runs three supply-chain security scans on every pull request.
+A reusable workflow that runs three supply-chain security scans.
 
 ## Table of Contents
 
@@ -73,12 +73,20 @@ By default the **full repository history** is scanned on every run. Pass `truffl
 
 ## Invisible Unicode Detection
 
-Scans every source file for invisible Unicode characters used in two known supply-chain attacks:
+Scans every source file for invisible or non-printing Unicode characters. Binary files are skipped automatically. Findings are emitted as inline PR annotations pointing to the exact file and line.
 
-- **GlassWorm** — embeds Unicode Variation Selectors (U+FE00–U+FE0E, U+E0100–U+E01EF) inside commits. The characters are invisible in code editors, terminals, and GitHub's diff view, allowing payloads to hide inside what appear to be legitimate changes.
-- **Trojan Source** — uses bidirectional control characters (U+202A–U+202E, U+2066–U+2069) to visually reorder code during review so that what a reviewer sees differs from what the compiler executes.
+The following categories are detected:
 
-Binary files are skipped automatically. Findings are emitted as inline PR annotations pointing to the exact file and line.
+| Category | Code points | Why it matters |
+|---|---|---|
+| **VARIATION_SELECTOR** | U+FE00–U+FE0E | GlassWorm attack — embeds invisible payload in commits; undetectable in editors, terminals, and GitHub diffs |
+| **VARIATION_SELECTOR_SUPPLEMENT** | U+E0100–U+E01EF | Same GlassWorm attack vector, supplementary range |
+| **BIDI_CONTROL** | U+200E–U+200F, U+202A–U+202E, U+2066–U+2069, U+061C | Trojan Source attack — visually reorders code during review so what a reviewer sees differs from what the compiler executes |
+| **ZERO_WIDTH** | U+200B–U+200C, U+2060, U+180E | Zero-width spaces and formatting marks; can hide content between visible characters |
+| **BOM** | U+FEFF | Byte-order mark; harmless in UTF-8 files but a common indicator of encoding tampering |
+| **TAGS_BLOCK** | U+E0000–U+E007F | Deprecated tag characters; no legitimate use in source code |
+| **PUA_BMP** | U+E000–U+F8FF | Private Use Area — legitimate in font files and icon CSS (e.g. Font Awesome); flag any unexpected occurrences in source code |
+| **PUA_SUPPLEMENTARY** | U+F0000–U+10FFFF | Supplementary Private Use Areas A and B — same caveat as PUA_BMP |
 
 **Exclude paths:**
 ```yaml
