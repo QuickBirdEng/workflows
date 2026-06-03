@@ -129,28 +129,11 @@ on:
     branches: [main]
 
 jobs:
-  # Unicode + JS supply-chain checks. TruffleHog is disabled here so the
-  # separate job below can pass the commit range dynamically (reusable-workflow
-  # inputs require static values; `base` must come from a context expression).
   security:
     uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
-    with:
-      enable-trufflehog-scan: false
-
-  # Secret scanning — no secrets required.
-  trufflehog-scan:
-    runs-on: default-k8s-runner
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: QuickBirdEng/actions/trufflehog-scan@main
-        with:
-          # PR: scan the PR diff. Push: scan only the new commits.
-          base: ${{ github.event.pull_request.base.sha || github.event.before }}
 ```
 
-No secrets are required by either job. TruffleHog is run as a separate step so the base commit can be set to a dynamic expression — `secrets: inherit` is not needed.
+No secrets are required. All three scans (Unicode, JS supply-chain, TruffleHog) run as jobs inside the workflow.
 
 ## Inputs
 

@@ -6,29 +6,12 @@ on:
     branches: [main]
 
 jobs:
-  # Unicode + JS supply-chain checks. TruffleHog is disabled here so the
-  # separate job below can pass the commit range dynamically (reusable-workflow
-  # inputs require static values; `base` must come from a context expression).
   security:
     uses: QuickBirdEng/workflows/.github/workflows/qb-security.yml@main
-    with:
-      enable-trufflehog-scan: false
-      # Tighten the package quarantine to 14 days for this repo.
-      # js-minimum-release-age-minutes: 20160
-      # Permit specific packages to run install scripts (e.g. native-build deps).
-      # js-allow-builds: |
-      #   esbuild
-      #   sharp
-
-  # Secret scanning — no secrets required.
-  trufflehog-scan:
-    runs-on: default-k8s-runner
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: QuickBirdEng/actions/trufflehog-scan@main
-        with:
-          # PR events: scan the PR diff. Push events: scan only the new commits
-          # (`github.event.before` is the SHA before this push).
-          base: ${{ github.event.pull_request.base.sha || github.event.before }}
+    # with:
+    #   # Tighten the package quarantine to 14 days for this repo.
+    #   js-minimum-release-age-minutes: 20160
+    #   # Permit specific packages to run install scripts (e.g. native-build deps).
+    #   js-allow-builds: |
+    #     esbuild
+    #     sharp
