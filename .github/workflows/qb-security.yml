@@ -15,7 +15,7 @@ on:
         description: 'Fail the workflow when any scan reports findings.'
         type: boolean
         default: true
-      enable-unicode-scan:
+      unicode-enable:
         description: 'Run the invisible-Unicode detection job. Set to false to skip this scan entirely.'
         type: boolean
         default: true
@@ -25,7 +25,7 @@ on:
           The following are always excluded: .git/**, node_modules/**, .idea/**, build/**, dist/**, and common binary/image types.
         type: string
         default: ''
-      enable-js-supply-chain-scan:
+      js-enable:
         description: 'Run the JS supply-chain hardening check (npm/yarn/pnpm). Set to false to skip this scan entirely.'
         type: boolean
         default: true
@@ -69,7 +69,7 @@ on:
         description: 'Minimum yarn version with native install-time enforcement (npmMinimalAgeGate + approvedGitRepositories). Yarn 1.x and yarn-berry below this hard-fail with a migration prompt.'
         type: string
         default: '4.14.0'
-      enable-trufflehog-scan:
+      trufflehog-enable:
         description: 'Run the TruffleHog secret scan. Set to false to skip.'
         type: boolean
         default: true
@@ -88,7 +88,7 @@ on:
 
 jobs:
   unicode-security-scan:
-    if: ${{ inputs.enable-unicode-scan }}
+    if: ${{ inputs.unicode-enable }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
@@ -102,7 +102,7 @@ jobs:
           fail-on-found: ${{ inputs.fail-on-found }}
 
   js-supply-chain-scan:
-    if: ${{ inputs.enable-js-supply-chain-scan }}
+    if: ${{ inputs.js-enable }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
@@ -123,7 +123,7 @@ jobs:
           fail-on-found: ${{ inputs.fail-on-found }}
 
   trufflehog-scan:
-    if: ${{ inputs.enable-trufflehog-scan }}
+    if: ${{ inputs.trufflehog-enable }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout

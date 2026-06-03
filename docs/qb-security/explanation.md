@@ -66,7 +66,7 @@ By default the **full repository history** is scanned on every run. Pass `truffl
 **Skip the scan entirely:**
 ```yaml
     with:
-      enable-trufflehog-scan: false
+      trufflehog-enable: false
 ```
 
 ---
@@ -91,7 +91,7 @@ Binary files are skipped automatically. Findings are emitted as inline PR annota
 **Skip the scan entirely:**
 ```yaml
     with:
-      enable-unicode-scan: false
+      unicode-enable: false
 ```
 
 ---
@@ -236,7 +236,7 @@ No workflow-side change is needed. The optional registry-scan path (`js-enforce-
 **Skip the scan entirely:**
 ```yaml
     with:
-      enable-js-supply-chain-scan: false
+      js-enable: false
 ```
 
 ---
@@ -249,13 +249,13 @@ All inputs are optional.
 |---|---|---|---|
 | `runs-on` | string | `default-k8s-runner` | Runner label for all scan jobs |
 | `fail-on-found` | boolean | `true` | Fail the check when any scan reports findings |
-| `enable-trufflehog-scan` | boolean | `true` | Set to `false` to skip the TruffleHog scan entirely |
+| `trufflehog-enable` | boolean | `true` | Set to `false` to skip the TruffleHog scan entirely |
 | `trufflehog-base` | string | `''` | Base commit SHA or ref. Leave empty to scan the full git history |
 | `trufflehog-exclude-paths` | string | `''` | Path to a file listing paths to exclude from the TruffleHog scan |
 | `trufflehog-include-paths` | string | `''` | Path to a file listing paths to include in the TruffleHog scan |
-| `enable-unicode-scan` | boolean | `true` | Set to `false` to skip the invisible-Unicode scan entirely |
+| `unicode-enable` | boolean | `true` | Set to `false` to skip the invisible-Unicode scan entirely |
 | `unicode-exclude` | string | `''` | Newline- or comma-separated glob patterns to exclude from the Unicode scan (always excluded: `.git/**`, `node_modules/**`, `.idea/**`, `build/**`, `dist/**`, common binary types) |
-| `enable-js-supply-chain-scan` | boolean | `true` | Set to `false` to skip the JS supply-chain scan entirely |
+| `js-enable` | boolean | `true` | Set to `false` to skip the JS supply-chain scan entirely |
 | `js-exclude` | string | `''` | Newline- or comma-separated glob patterns to exclude from the JS supply-chain scan (always excluded: `.git/**`, `node_modules/**`, `.idea/**`, `build/**`, `dist/**`) |
 | `js-minimum-release-age-minutes` | number | `4320` | Required quarantine for new package versions in minutes (3 days). Set to `0` to disable |
 | `js-allow-builds` | string | `''` | Newline- or comma-separated list of packages allowed to run install scripts. Empty = none allowed |
