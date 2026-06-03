@@ -8,15 +8,9 @@ on:
         type: string
         default: 'default-k8s-runner'
       search-directory:
-        description: 'Directory to scan recursively.'
+        description: 'Directory to scan recursively for the Unicode and JS supply-chain scans.'
         type: string
         default: '.'
-      exclude:
-        description: |
-          Newline- or comma-separated glob patterns for additional files and directories to exclude.
-          The following are always excluded: .git/**, node_modules/**, .idea/**, build/**, dist/**, and common binary/image types.
-        type: string
-        default: ''
       fail-on-found:
         description: 'Fail the workflow when any scan reports findings.'
         type: boolean
@@ -25,10 +19,22 @@ on:
         description: 'Run the invisible-Unicode detection job. Set to false to skip this scan entirely.'
         type: boolean
         default: true
+      unicode-exclude:
+        description: |
+          Newline- or comma-separated glob patterns for files and directories to exclude from the Unicode scan.
+          The following are always excluded: .git/**, node_modules/**, .idea/**, build/**, dist/**, and common binary/image types.
+        type: string
+        default: ''
       enable-js-supply-chain-scan:
         description: 'Run the JS supply-chain hardening check (npm/yarn/pnpm). Set to false to skip this scan entirely.'
         type: boolean
         default: true
+      js-exclude:
+        description: |
+          Newline- or comma-separated glob patterns for files and directories to exclude from the JS supply-chain scan.
+          The following are always excluded: .git/**, node_modules/**, .idea/**, build/**, dist/**.
+        type: string
+        default: ''
       js-minimum-release-age-minutes:
         description: 'Required quarantine period for newly published package versions (pnpm `minimumReleaseAge`). Default 4320 (3 days). Set to 0 to disable.'
         type: number
@@ -92,7 +98,7 @@ jobs:
         uses: QuickBirdEng/actions/detect-invisible-unicode@main
         with:
           search-directory: ${{ inputs.search-directory }}
-          exclude: ${{ inputs.exclude }}
+          exclude: ${{ inputs.unicode-exclude }}
           fail-on-found: ${{ inputs.fail-on-found }}
 
   js-supply-chain-scan:
@@ -106,7 +112,7 @@ jobs:
         uses: QuickBirdEng/actions/js-supply-chain-check@main
         with:
           search-directory: ${{ inputs.search-directory }}
-          exclude: ${{ inputs.exclude }}
+          exclude: ${{ inputs.js-exclude }}
           minimum-release-age-minutes: ${{ inputs.js-minimum-release-age-minutes }}
           allow-builds: ${{ inputs.js-allow-builds }}
           check-install-scripts: ${{ inputs.js-check-install-scripts }}

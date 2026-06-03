@@ -41,14 +41,6 @@ No secrets are required. All three scans run as parallel jobs inside the workflo
       fail-on-found: false
 ```
 
-**Exclude paths from the Unicode and JS supply-chain scans** (not TruffleHog — use `trufflehog-exclude-paths` for that):
-```yaml
-    with:
-      exclude: |
-        generated/**
-        vendored/**
-```
-
 ---
 
 ## Secret Scanning (TruffleHog)
@@ -63,6 +55,13 @@ By default the **full repository history** is scanned on every run. Pass `truffl
 ```
 
 `github.event.pull_request.base.sha` is the tip of the target branch on a `pull_request` event; `github.event.before` is the SHA before the push on a `push` event.
+
+**Exclude or restrict paths:**
+```yaml
+    with:
+      trufflehog-exclude-paths: .trufflehog-exclude   # file listing paths to skip
+      trufflehog-include-paths: .trufflehog-include   # file listing paths to scan
+```
 
 **Skip the scan entirely:**
 ```yaml
@@ -80,6 +79,14 @@ Scans every source file for invisible Unicode characters used in two known suppl
 - **Trojan Source** — uses bidirectional control characters (U+202A–U+202E, U+2066–U+2069) to visually reorder code during review so that what a reviewer sees differs from what the compiler executes.
 
 Binary files are skipped automatically. Findings are emitted as inline PR annotations pointing to the exact file and line.
+
+**Exclude paths:**
+```yaml
+    with:
+      unicode-exclude: |
+        generated/**
+        vendored/**
+```
 
 **Skip the scan entirely:**
 ```yaml
@@ -182,6 +189,14 @@ block-exotic-subdeps=true
 
 ### Overrides
 
+**Exclude paths:**
+```yaml
+    with:
+      js-exclude: |
+        generated/**
+        vendored/**
+```
+
 **Tighten the quarantine and whitelist install-script packages:**
 ```yaml
     with:
@@ -232,16 +247,16 @@ All inputs are optional.
 
 | Input | Type | Default | Description |
 |---|---|---|---|
-| `runs-on` | string | `default-k8s-runner` | Runner label for the scan jobs |
-| `search-directory` | string | `.` | Root directory for the Unicode and JS supply-chain scans |
-| `exclude` | string | `''` | Newline- or comma-separated glob patterns to skip in the Unicode and JS supply-chain scans (always excluded: `.git/**`, `node_modules/**`, `.idea/**`, `build/**`, `dist/**`, common binary types) |
+| `runs-on` | string | `default-k8s-runner` | Runner label for all scan jobs |
 | `fail-on-found` | boolean | `true` | Fail the check when any scan reports findings |
 | `enable-trufflehog-scan` | boolean | `true` | Set to `false` to skip the TruffleHog scan entirely |
 | `trufflehog-base` | string | `''` | Base commit SHA or ref. Leave empty to scan the full git history |
 | `trufflehog-exclude-paths` | string | `''` | Path to a file listing paths to exclude from the TruffleHog scan |
 | `trufflehog-include-paths` | string | `''` | Path to a file listing paths to include in the TruffleHog scan |
 | `enable-unicode-scan` | boolean | `true` | Set to `false` to skip the invisible-Unicode scan entirely |
+| `unicode-exclude` | string | `''` | Newline- or comma-separated glob patterns to exclude from the Unicode scan (always excluded: `.git/**`, `node_modules/**`, `.idea/**`, `build/**`, `dist/**`, common binary types) |
 | `enable-js-supply-chain-scan` | boolean | `true` | Set to `false` to skip the JS supply-chain scan entirely |
+| `js-exclude` | string | `''` | Newline- or comma-separated glob patterns to exclude from the JS supply-chain scan (always excluded: `.git/**`, `node_modules/**`, `.idea/**`, `build/**`, `dist/**`) |
 | `js-minimum-release-age-minutes` | number | `4320` | Required quarantine for new package versions in minutes (3 days). Set to `0` to disable |
 | `js-allow-builds` | string | `''` | Newline- or comma-separated list of packages allowed to run install scripts. Empty = none allowed |
 | `js-check-install-scripts` | boolean | `true` | Set to `false` to skip the install-scripts sub-check |
@@ -249,3 +264,4 @@ All inputs are optional.
 | `js-enforce-release-age-via-registry` | boolean | `false` | CI-time band-aid: scan lockfile entries against the npm registry to enforce minimum release age. Does not protect developer machines |
 | `js-pnpm-min-version` | string | `10.0.0` | Minimum pnpm version where supply-chain settings take effect |
 | `js-yarn-min-version` | string | `4.14.0` | Minimum yarn version with native install-time enforcement (`npmMinimalAgeGate` + `approvedGitRepositories`) |
+| `search-directory` | string | `.` | Root directory for the Unicode and JS supply-chain scans |
