@@ -131,9 +131,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Merge TruffleHog exclude paths
+        id: merge-excludes
+        uses: QuickBirdEng/actions/trufflehog-merge-excludes@main
+        with:
+          base-exclude-paths: ${{ inputs.trufflehog-exclude-paths }}
+
       - name: TruffleHog Secret Scan
         uses: QuickBirdEng/actions/trufflehog-scan@main
         with:
           base: ${{ inputs.trufflehog-base }}
-          exclude-paths: ${{ inputs.trufflehog-exclude-paths }}
+          exclude-paths: ${{ steps.merge-excludes.outputs.file }}
           include-paths: ${{ inputs.trufflehog-include-paths }}
