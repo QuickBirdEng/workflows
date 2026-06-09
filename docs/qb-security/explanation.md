@@ -63,6 +63,27 @@ By default the **full repository history** is scanned on every run. Pass `truffl
       trufflehog-include-paths: .trufflehog-include   # file listing paths to scan
 ```
 
+**Self-service ignore rules (no workflow change needed):**
+
+Create `.qb/security/trufflehog-ignores.yaml` in your repo to manage TruffleHog ignores without touching the central governance config or your workflow file:
+
+```yaml
+# .qb/security/trufflehog-ignores.yaml
+
+paths:
+  - test/fixtures/**          # gitignore-style globs — these paths are excluded from scanning entirely
+  - vendor/**
+
+acknowledged_findings:
+  - { commit: "abc123def456", path: test/fixtures/dummy-credentials.txt }
+```
+
+**`paths`** works the same as `trufflehog-exclude-paths` — gitignore-style globs that prevent matching files from being scanned. The patterns are merged with any file you pass via `trufflehog-exclude-paths`, so both apply.
+
+**`acknowledged_findings`** suppresses a specific finding that has been reviewed and accepted as non-actionable (e.g. a test fixture, a dummy credential, a rotated secret that still appears in history). Each entry must specify the exact `commit` SHA where the secret was introduced and the `path` of the file. Only that exact commit+path combination is suppressed — any new secret committed to the same file in a future commit will still be caught.
+
+Both fields are applied in the PR scan (`qb-security`) and the nightly org-wide scan. Use `acknowledged_findings` sparingly: the right first response to a real secret is revocation, not acknowledgement.
+
 **Skip the scan entirely:**
 ```yaml
     with:
