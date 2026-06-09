@@ -138,8 +138,19 @@ jobs:
           base-exclude-paths: ${{ inputs.trufflehog-exclude-paths }}
 
       - name: TruffleHog Secret Scan
+        id: trufflehog
         uses: QuickBirdEng/actions/trufflehog-scan@main
         with:
           base: ${{ inputs.trufflehog-base }}
           exclude-paths: ${{ steps.merge-excludes.outputs.file }}
           include-paths: ${{ inputs.trufflehog-include-paths }}
+          annotations: 'false'
+          output-file: ${{ runner.temp }}/trufflehog-findings.json
+        continue-on-error: true
+
+      - name: Filter acknowledged findings and annotate
+        uses: QuickBirdEng/actions/trufflehog-filter-findings@main
+        with:
+          findings-file: ${{ runner.temp }}/trufflehog-findings.json
+          scan-outcome: ${{ steps.trufflehog.outcome }}
+          fail-on-found: ${{ inputs.fail-on-found }}
