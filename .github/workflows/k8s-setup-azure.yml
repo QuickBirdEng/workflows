@@ -56,6 +56,9 @@ jobs:
                 kubernetes.io/elb.class: union
               type: LoadBalancer
               externalTrafficPolicy: Local
+              enablePorts:
+                stat: false
+                admin: false
             config:
               cr-global: haproxy-controller/haproxy-global
               defaults-config-snippet: |

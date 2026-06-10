@@ -68,6 +68,9 @@ jobs:
               type: LoadBalancer
               loadBalancerIP: ${{ inputs.load_balancer_ip }}
               externalTrafficPolicy: Local
+              enablePorts:
+                stat: false
+                admin: false
             config:
               cr-global: haproxy-controller/haproxy-global
               defaults-config-snippet: |
