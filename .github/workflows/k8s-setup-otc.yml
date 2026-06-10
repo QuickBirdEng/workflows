@@ -38,7 +38,7 @@ on:
 jobs:
   deploy-ingress-controller:
     runs-on: [self-hosted, docker]
-    if: contains('["acpoppe","KlausNie","kupeliorhun", "nasirky"]', github.triggering_actor)
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -102,12 +102,12 @@ jobs:
 
   deploy-cert-manager:
     runs-on: [self-hosted, docker]
-    if: contains('["acpoppe","KlausNie,"kupeliorhun", "nasirky"]', github.triggering_actor)
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
     needs: deploy-ingress-controller
     steps:
-      - name: Sleep while ingress-nginx starts
+      - name: Sleep while haproxy starts
         run: |
-          echo "Sleeping for 60 seconds to allow ingress-nginx to start"
+          echo "Sleeping for 60 seconds to allow haproxy to start"
           sleep 60
       - uses: actions/checkout@v4
         with:
@@ -138,7 +138,7 @@ jobs:
 
   deploy-kyverno:
     runs-on: [self-hosted, docker]
-    if: contains('["acpoppe","KlausNie,"kupeliorhun", "nasirky"]', github.triggering_actor)
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
     needs: deploy-cert-manager
     steps:
       - uses: actions/checkout@v4
