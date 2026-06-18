@@ -40,7 +40,7 @@ jobs:
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
-    if: contains('["nasirky","acpoppe","grafele"]', github.triggering_actor)
+    if: contains('["nasirky","acpoppe","grafele","pauljohanneskraft"]', github.triggering_actor)
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
