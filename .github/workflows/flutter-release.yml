@@ -54,6 +54,10 @@ on:
         description: "Create and finalize a Sentry release after build. Should be enabled for production-like releases (study, production) only."
         type: boolean
         default: false
+      enable-onesignal-location:
+        description: "Include OneSignal's location module in the iOS build. Defaults to false, so the location module is excluded (avoids the ITMS-90683 location purpose-string warning). Set to true only for apps that actually use OneSignal location."
+        type: boolean
+        default: false
   workflow_dispatch:
 
 concurrency:
@@ -203,6 +207,8 @@ jobs:
   ios-publish:
     runs-on: [self-hosted, macOS]
     needs: [generate-build-number, lint, test, ios-name-suffix-generation]
+    env:
+      ONESIGNAL_DISABLE_LOCATION: ${{ !inputs.enable-onesignal-location && 'true' || '' }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
