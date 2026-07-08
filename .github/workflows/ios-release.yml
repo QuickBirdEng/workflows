@@ -96,7 +96,6 @@ jobs:
           apple-auth-key-issuer-id: ${{ secrets.APPLE_AUTH_KEY_ISSUER_ID }}
           apple-auth-key-content: ${{ secrets.APPLE_AUTH_KEY_CONTENT }}
           apple-auth-key-encoding: "base64"
-          slack-slug: ${{ secrets.SLACK_SLUG }}
       - shell: bash -l {0}
         run: gem install bundler && bundle update
       - name: Setup API Key (if secret is set)
