@@ -1,0 +1,95 @@
+name: Deploy SigNoz
+
+on:
+  workflow_call:
+    inputs:
+      namespace:
+        description: "Namespace to install SigNoz into"
+        type: string
+        required: false
+        default: "signoz"
+      ingress-host:
+        description: "Hostname for the SigNoz web UI ingress. Leave empty to disable ingress."
+        type: string
+        required: false
+        default: ""
+      allowed-ips:
+        description: "Comma-separated list of CIDRs to whitelist (e.g. '1.2.3.4/32,5.6.7.8/24'). Leave empty to allow all."
+        type: string
+        required: false
+        default: ""
+      cluster-name:
+        description: "Value reported as k8s.cluster.name on collected telemetry."
+        type: string
+        required: false
+        default: "default"
+      git-lfs:
+        description: "Checkout the project with git lfs"
+        type: boolean
+        default: false
+  workflow_dispatch:
+
+jobs:
+  k8s-install-signoz:
+    runs-on: [self-hosted, docker]
+    if: contains('["acpoppe","KlausNie","nasirky"]', github.triggering_actor)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.git-lfs }}
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+      - uses: azure/setup-helm@v3
+        with:
+          version: "3.13.3"
+
+      - name: Helm Install SigNoz
+        run: |
+          helm repo add signoz https://charts.signoz.io
+          helm repo update
+
+          cat <<EOF | helm upgrade --install signoz signoz/signoz \
+            --namespace "${{ inputs.namespace }}" \
+            --create-namespace \
+            -f - \
+            --version 0.132.2 \
+            --wait --timeout 5m
+          signoz:
+            ingress:
+              enabled: ${{ inputs.ingress-host != '' }}
+              className: haproxy
+              annotations:
+                cert-manager.io/cluster-issuer: letsencrypt-prod
+                cert-manager.io/private-key-algorithm: "ECDSA"
+                cert-manager.io/private-key-size: "384"
+                cert-manager.io/private-key-rotation-policy: "Always"
+                haproxy.org/ssl-redirect: "true"
+                haproxy.org/allow-list: "${{ inputs.allowed-ips }}"
+              hosts:
+                - host: ${{ inputs.ingress-host }}
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      port: 8080
+              tls:
+                - hosts:
+                    - ${{ inputs.ingress-host }}
+                  secretName: signoz-tls
+          EOF
+
+      - name: Helm Install k8s-infra
+        run: |
+          cat <<EOF | helm upgrade --install k8s-infra signoz/k8s-infra \
+            --namespace "${{ inputs.namespace }}" \
+            --create-namespace \
+            -f - \
+            --version 0.16.0 \
+            --wait --timeout 5m
+          clusterName: ${{ inputs.cluster-name }}
+          otelCollectorEndpoint: http://signoz-otel-collector.${{ inputs.namespace }}.svc.cluster.local:4318
+          otelInsecure: true
+          EOF
