@@ -124,7 +124,7 @@ jobs:
           upload-key: ${{ secrets.UPLOAD_KEY }}
           obfuscate: ${{ inputs.obfuscate }}
       - name: Store debug symbols for Sentry
-        uses: QuickBirdEng/actions/store-debug-symbols@main
+        uses: QuickBirdEng/actions/store-debug-symbols@feat/sentry-symbols-separate-job
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -170,7 +170,7 @@ jobs:
           obfuscate: ${{ inputs.obfuscate }}
         continue-on-error: true
       - name: Store debug symbols for Sentry
-        uses: QuickBirdEng/actions/store-debug-symbols@main
+        uses: QuickBirdEng/actions/store-debug-symbols@feat/sentry-symbols-separate-job
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -221,7 +221,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           obfuscate: ${{ inputs.obfuscate }}
       - name: Store debug symbols for Sentry
-        uses: QuickBirdEng/actions/store-debug-symbols@main
+        uses: QuickBirdEng/actions/store-debug-symbols@feat/sentry-symbols-separate-job
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
@@ -261,7 +261,7 @@ jobs:
           else
             echo "configured=true" >> $GITHUB_OUTPUT
           fi
-      - uses: QuickBirdEng/actions/checkout-ssh@main
+      - uses: QuickBirdEng/actions/checkout-ssh@feat/sentry-symbols-separate-job
         if: ${{ steps.sentry.outputs.configured == 'true' }}
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
@@ -269,7 +269,7 @@ jobs:
       - name: Restore debug symbols
         id: symbols
         if: ${{ steps.sentry.outputs.configured == 'true' }}
-        uses: QuickBirdEng/actions/restore-debug-symbols@main
+        uses: QuickBirdEng/actions/restore-debug-symbols@feat/sentry-symbols-separate-job
         with:
           build-number: ${{ needs.generate-build-number.outputs.build-number }}
           platforms: ios android-apk android-aab
@@ -277,7 +277,7 @@ jobs:
           secret-key: ${{ secrets.DO_SECRET_KEY }}
       - name: Upload debug symbols to Sentry
         if: ${{ steps.sentry.outputs.configured == 'true' }}
-        uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
+        uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@feat/sentry-symbols-separate-job
         with:
           url: ${{ secrets.SENTRY_URL }}
           organization: ${{ secrets.SENTRY_ORG }}
