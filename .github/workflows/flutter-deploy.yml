@@ -102,6 +102,8 @@ jobs:
   android-publish:
     runs-on: [self-hosted]
     needs: [generate-build-number]
+    outputs:
+      release: ${{ steps.publish-android.outputs.version-and-build-number }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -123,20 +125,18 @@ jobs:
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
           upload-key: ${{ secrets.UPLOAD_KEY }}
           obfuscate: ${{ inputs.obfuscate }}
-      - name: Store debug symbols for Sentry
-        uses: QuickBirdEng/actions/store-debug-symbols@feat/sentry-symbols-separate-job
+      - name: Upload debug symbols for Sentry
+        uses: actions/upload-artifact@v4
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
         with:
-          platform: android-apk
-          build-number: ${{ needs.generate-build-number.outputs.build-number }}
-          access-key: ${{ secrets.DO_ACCESS_KEY }}
-          secret-key: ${{ secrets.DO_SECRET_KEY }}
-          dart-symbols-file-path: ${{ steps.publish-android.outputs.artifact-dart-symbols-file-path }}
-          dart-obfuscation-map-file-path: ${{ steps.publish-android.outputs.artifact-dart-obfuscation-map-file-path }}
-          proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
-          release: ${{ inputs.finalize-sentry-release == true && steps.publish-android.outputs.version-and-build-number || '' }}
+          name: debug-symbols-android-apk
+          path: |
+            ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
+            ${{ steps.publish-android.outputs.artifact-dart-symbols-file-path }}
+          if-no-files-found: warn
+          retention-days: 14
         continue-on-error: true
 
   ios-publish:
@@ -144,6 +144,8 @@ jobs:
     needs: [generate-build-number, ios-name-suffix-generation]
     env:
       ONESIGNAL_DISABLE_LOCATION: ${{ !inputs.enable-onesignal-location && 'true' || '' }}
+    outputs:
+      release: ${{ steps.publish-ios.outputs.version-and-build-number }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -169,20 +171,18 @@ jobs:
           build-arguments: ${{ inputs.ios-build-arguments }}
           obfuscate: ${{ inputs.obfuscate }}
         continue-on-error: true
-      - name: Store debug symbols for Sentry
-        uses: QuickBirdEng/actions/store-debug-symbols@feat/sentry-symbols-separate-job
+      - name: Upload debug symbols for Sentry
+        uses: actions/upload-artifact@v4
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
         with:
-          platform: ios
-          build-number: ${{ needs.generate-build-number.outputs.build-number }}
-          access-key: ${{ secrets.DO_ACCESS_KEY }}
-          secret-key: ${{ secrets.DO_SECRET_KEY }}
-          dart-symbols-file-path: ${{ steps.publish-ios.outputs.artifact-dart-symbols-file-path }}
-          dart-obfuscation-map-file-path: ${{ steps.publish-ios.outputs.artifact-dart-obfuscation-map-file-path }}
-          dsyms-path: ${{ steps.publish-ios.outputs.artifact-dsyms-path }}
-          release: ${{ inputs.finalize-sentry-release == true && steps.publish-ios.outputs.version-and-build-number || '' }}
+          name: debug-symbols-ios
+          path: |
+            ${{ steps.publish-ios.outputs.artifact-dsyms-path }}
+            ${{ steps.publish-ios.outputs.artifact-dart-symbols-file-path }}
+          if-no-files-found: warn
+          retention-days: 14
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         if: contains(inputs.android-build-arguments, 'PRODUCTION')
@@ -197,6 +197,8 @@ jobs:
   android-bundle:
     runs-on: [self-hosted, macOS]
     needs: [generate-build-number, android-name-suffix-generation]
+    outputs:
+      release: ${{ steps.flutter-build.outputs.version-and-build-number }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -220,20 +222,18 @@ jobs:
           build-arguments: ${{ inputs.android-build-arguments }}
           working-directory: ${{ inputs.working-directory }}
           obfuscate: ${{ inputs.obfuscate }}
-      - name: Store debug symbols for Sentry
-        uses: QuickBirdEng/actions/store-debug-symbols@feat/sentry-symbols-separate-job
+      - name: Upload debug symbols for Sentry
+        uses: actions/upload-artifact@v4
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         if: ${{ env.SENTRY_PROJECT != '' }}
         with:
-          platform: android-aab
-          build-number: ${{ needs.generate-build-number.outputs.build-number }}
-          access-key: ${{ secrets.DO_ACCESS_KEY }}
-          secret-key: ${{ secrets.DO_SECRET_KEY }}
-          dart-symbols-file-path: ${{ steps.flutter-build.outputs.artifact-dart-symbols-file-path }}
-          dart-obfuscation-map-file-path: ${{ steps.flutter-build.outputs.artifact-dart-obfuscation-map-file-path }}
-          proguard-mapping-file-path: ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
-          release: ${{ inputs.finalize-sentry-release == true && steps.flutter-build.outputs.version-and-build-number || '' }}
+          name: debug-symbols-android-aab
+          path: |
+            ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
+            ${{ steps.flutter-build.outputs.artifact-dart-symbols-file-path }}
+          if-no-files-found: warn
+          retention-days: 14
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
@@ -247,7 +247,7 @@ jobs:
   upload-sentry:
     name: Upload debug symbols to Sentry
     runs-on: default-k8s-runner
-    needs: [generate-build-number, android-publish, ios-publish, android-bundle]
+    needs: [android-publish, ios-publish, android-bundle]
     if: ${{ !cancelled() && (needs.android-publish.result == 'success' || needs.ios-publish.result == 'success' || needs.android-bundle.result == 'success') }}
     steps:
       - name: Check Sentry configuration
@@ -266,15 +266,12 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CI_SSH_PRIVATE_KEY_FOR_GITHUB_PRIVATE_REPOS }}
           fetch-depth: 0
-      - name: Restore debug symbols
-        id: symbols
+      - name: Download debug symbols
         if: ${{ steps.sentry.outputs.configured == 'true' }}
-        uses: QuickBirdEng/actions/restore-debug-symbols@feat/sentry-symbols-separate-job
+        uses: actions/download-artifact@v4
         with:
-          build-number: ${{ needs.generate-build-number.outputs.build-number }}
-          platforms: ios android-apk android-aab
-          access-key: ${{ secrets.DO_ACCESS_KEY }}
-          secret-key: ${{ secrets.DO_SECRET_KEY }}
+          pattern: debug-symbols-*
+          path: debug-symbols
       - name: Upload debug symbols to Sentry
         if: ${{ steps.sentry.outputs.configured == 'true' }}
         uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@feat/sentry-symbols-separate-job
@@ -283,8 +280,8 @@ jobs:
           organization: ${{ secrets.SENTRY_ORG }}
           project: ${{ secrets.SENTRY_PROJECT }}
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          symbols-dir: ${{ steps.symbols.outputs.symbols-dir }}
-          release: ${{ steps.symbols.outputs.release }}
+          symbols-dir: debug-symbols
+          release: ${{ inputs.finalize-sentry-release == true && (needs.ios-publish.outputs.release || needs.android-publish.outputs.release || needs.android-bundle.outputs.release) || '' }}
 
   dependency-reports:
     if: ${{ inputs.dependency-reports }}
