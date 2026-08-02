@@ -4,11 +4,22 @@ env:
 
 on:
   workflow_call:
+    inputs:
+      runs-on:
+        description: 'Runner label(s) for this workflow. JSON array or a single label. Defaults to the current value so existing callers are unaffected.'
+        required: false
+        type: string
+        default: '["self-hosted", "Linux"]'
+      strict-under-investigation:
+        description: 'Block the approval when a finding is still under_investigation. Off by default: it is a legitimate holding state at approval time and expires at the mitigation deadline anyway.'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   verify-and-update-approval:
     if: github.event.review.state == 'approved'
-    runs-on: [self-hosted, Linux]
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
@@ -163,6 +174,13 @@ jobs:
             echo "::error::❌ Failed files: ${FAILED_FILES[*]:-None}"
             exit 1
           fi
+      - name: Verification - Fix or VEX
+        if: steps.fetch-soup-files.outputs.skip-remaining-steps == 'false'
+        uses: QuickBirdEng/actions/soup-fix-or-vex@main
+        with:
+          soup-files: ${{ env.SOUP_FILES }}
+          strict-under-investigation: ${{ inputs.strict-under-investigation }}
+
       - name: Update approval information
         if: steps.fetch-soup-files.outputs.skip-remaining-steps == 'false'
         shell: bash
