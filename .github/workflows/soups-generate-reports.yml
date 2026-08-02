@@ -3,12 +3,17 @@ name: SOUP - Generate Reports optionally including PDFs
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner label(s) for this workflow. JSON array or a single label. Defaults to the current value so existing callers are unaffected.'
+        required: false
+        type: string
+        default: '["self-hosted", "Linux"]'
       generate-pdfs:
         description: 'Set to true to generate PDFs for approved SOUPs'
         type: boolean
 jobs:
   reports:
-    runs-on: [self-hosted, Linux]
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:

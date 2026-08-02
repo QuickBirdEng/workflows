@@ -6,6 +6,11 @@ env:
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner label(s) for this workflow. JSON array or a single label. Defaults to the current value so existing callers are unaffected.'
+        required: false
+        type: string
+        default: '["self-hosted", "Linux"]'
       flutter:
         description: 'Web Working directory for action'
         type: boolean
@@ -16,7 +21,7 @@ on:
         default: false
 jobs:
   version_check:
-    runs-on: [self-hosted, Linux]
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     steps:
       - uses: actions/checkout@v3
       - name: Install yq

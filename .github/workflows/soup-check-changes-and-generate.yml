@@ -5,6 +5,11 @@ env:
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner label(s) for this workflow. JSON array or a single label. Defaults to the current value so existing callers are unaffected.'
+        required: false
+        type: string
+        default: '["self-hosted", "Linux"]'
       base-branch:
         description: 'The base branch to compare changes against'
         required: false
@@ -18,7 +23,7 @@ on:
 jobs:
   generate-missing:
     if: ${{ !github.event.pull_request.draft }}
-    runs-on: [self-hosted, Linux]
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     steps:
       - uses: QuickBirdEng/actions/checkout-ssh@main
         with:
