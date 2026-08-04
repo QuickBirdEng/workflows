@@ -285,6 +285,14 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           symbols-dir: ${{ steps.symbols.outputs.symbols-dir }}
           release: ${{ steps.symbols.outputs.release }}
+      - name: Delete the stored debug symbols
+        if: ${{ success() && steps.sentry.outputs.configured == 'true' }}
+        uses: QuickBirdEng/actions/delete-debug-symbols@feat/sentry-symbols-separate-job
+        with:
+          build-number: ${{ needs.generate-build-number.outputs.build-number }}
+          platforms: ios android-apk android-aab
+          access-key: ${{ secrets.DO_ACCESS_KEY }}
+          secret-key: ${{ secrets.DO_SECRET_KEY }}
 
   dependency-reports:
     if: ${{ inputs.dependency-reports }}
