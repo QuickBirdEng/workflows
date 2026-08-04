@@ -136,7 +136,7 @@ jobs:
             ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
             ${{ steps.publish-android.outputs.artifact-dart-symbols-file-path }}
           if-no-files-found: warn
-          retention-days: 1
+          retention-days: 14
         continue-on-error: true
 
   ios-publish:
@@ -182,7 +182,7 @@ jobs:
             ${{ steps.publish-ios.outputs.artifact-dsyms-path }}
             ${{ steps.publish-ios.outputs.artifact-dart-symbols-file-path }}
           if-no-files-found: warn
-          retention-days: 1
+          retention-days: 14
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         if: contains(inputs.android-build-arguments, 'PRODUCTION')
@@ -233,7 +233,7 @@ jobs:
             ${{ inputs.working-directory }}/build/app/outputs/mapping/release/mapping.txt
             ${{ steps.flutter-build.outputs.artifact-dart-symbols-file-path }}
           if-no-files-found: warn
-          retention-days: 1
+          retention-days: 14
         continue-on-error: true
       - name: Compress & Upload Artifact to QB Spaces
         uses: QuickBirdEng/actions/compress-and-upload-artifact-qb@main
@@ -282,13 +282,6 @@ jobs:
           auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           symbols-dir: debug-symbols
           release: ${{ inputs.finalize-sentry-release == true && (needs.ios-publish.outputs.release || needs.android-publish.outputs.release || needs.android-bundle.outputs.release) || '' }}
-      - name: Delete the symbol artifacts
-        if: ${{ success() && steps.sentry.outputs.configured == 'true' }}
-        uses: GeekyEggo/delete-artifact@v5
-        with:
-          name: debug-symbols-*
-          useGlob: true
-          failOnError: false
 
   dependency-reports:
     if: ${{ inputs.dependency-reports }}
