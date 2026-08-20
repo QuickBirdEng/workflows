@@ -77,8 +77,7 @@ jobs:
 
       - name: KEV monitor
         id: monitor
-        # TODO: point back to @main once actions#51 merges. kev-monitor is not on main yet.
-        uses: QuickBirdEng/actions/kev-monitor@actions/dev-195-soup-discovery
+        uses: QuickBirdEng/actions/kev-monitor@main
         with:
           product: ${{ inputs.product }}
           cra-scope: ${{ inputs.cra-scope }}

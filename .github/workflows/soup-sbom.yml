@@ -103,8 +103,7 @@ jobs:
 
       - name: Discover, scan, assess, publish
         id: discovery
-        # TODO: point back to @main once actions#51 merges. soup-discovery is not on main yet.
-        uses: QuickBirdEng/actions/soup-discovery@actions/dev-195-soup-discovery
+        uses: QuickBirdEng/actions/soup-discovery@main
         with:
           product: ${{ inputs.product }}
           version: ${{ inputs.version }}
