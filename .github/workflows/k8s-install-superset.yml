@@ -71,10 +71,10 @@ jobs:
 
       - name: Delete Superset Secrets
         continue-on-error: true
-        run: kubectl delete secret superset-env --namespace=${{ inputs.namespace }}
+        run: kubectl delete secret superset-app-secrets --namespace=${{ inputs.namespace }}
       - name: Apply Superset Secrets
         run: |
-          kubectl create secret generic superset-env \
+          kubectl create secret generic superset-app-secrets \
             --from-literal=SUPERSET_SECRET_KEY="${{ env.SUPERSET_SECRET_KEY }}" \
             --from-literal=DB_HOST="${{ env.DB_HOST }}" \
             --from-literal=DB_PORT="${{ env.DB_PORT }}" \
@@ -88,13 +88,6 @@ jobs:
             --from-literal=SMTP_MAIL_FROM="${{ env.SMTP_MAIL_FROM }}" \
             --from-literal=SMTP_SSL="${{ env.SMTP_SSL }}" \
             --from-literal=SMTP_STARTTLS="${{ env.SMTP_STARTTLS }}" \
-            --namespace=${{ inputs.namespace }}
-          kubectl label secret superset-env \
-            app.kubernetes.io/managed-by=Helm \
-            --namespace=${{ inputs.namespace }}
-          kubectl annotate secret superset-env \
-            meta.helm.sh/release-name=superset \
-            meta.helm.sh/release-namespace=${{ inputs.namespace }} \
             --namespace=${{ inputs.namespace }}
 
   deploy-superset:
@@ -231,67 +224,67 @@ jobs:
             - name: SUPERSET_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: SUPERSET_SECRET_KEY
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: DB_HOST
             - name: DB_PORT
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: DB_PORT
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: DB_USER
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: DB_PASSWORD
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: DB_NAME
             - name: SMTP_HOST
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: SMTP_HOST
             - name: SMTP_PORT
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: SMTP_PORT
             - name: SMTP_USER
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: SMTP_USER
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: SMTP_PASSWORD
             - name: SMTP_MAIL_FROM
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: SMTP_MAIL_FROM
             - name: SMTP_SSL
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: SMTP_SSL
             - name: SMTP_STARTTLS
               valueFrom:
                 secretKeyRef:
-                  name: superset-env
+                  name: superset-app-secrets
                   key: SMTP_STARTTLS
             - name: INGRESS_HOST
               value: "${{ inputs.ingress-host }}"
