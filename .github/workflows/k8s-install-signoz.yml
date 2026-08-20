@@ -23,6 +23,11 @@ on:
         type: string
         required: false
         default: "default"
+      clickhouse-storage-size:
+        description: "ClickHouse data volume size. Only ever increase this - Kubernetes rejects shrinking a PVC."
+        type: string
+        required: false
+        default: "50Gi"
       git-lfs:
         description: "Checkout the project with git lfs"
         type: boolean
@@ -57,7 +62,23 @@ jobs:
             --create-namespace \
             -f - \
             --version 0.132.2 \
-            --wait --timeout 5m
+            --wait --timeout 15m
+          clickhouse:
+            persistence:
+              size: ${{ inputs.clickhouse-storage-size }}
+            profiles:
+              default/query_profiler_real_time_period_ns: 0
+              default/query_profiler_cpu_time_period_ns: 0
+            clickhouseOperator:
+              traceLog: { ttl: 1 }
+              processorsProfileLog: { ttl: 1 }
+              queryThreadLog: { ttl: 1 }
+              queryViewsLog: { ttl: 1 }
+              zookeeperLog: { ttl: 3 }
+              queryLog: { ttl: 3 }
+              partLog: { ttl: 3 }
+              metricLog: { ttl: 3 }
+              asynchronousMetricLog: { ttl: 3 }
           signoz:
             ingress:
               enabled: ${{ inputs.ingress-host != '' }}
@@ -92,4 +113,19 @@ jobs:
           clusterName: ${{ inputs.cluster-name }}
           otelCollectorEndpoint: http://signoz-otel-collector.${{ inputs.namespace }}.svc.cluster.local:4318
           otelInsecure: true
+          presets:
+            logsCollection:
+              enabled: true
+            k8sEvents:
+              enabled: true
+            kubernetesAttributes:
+              enabled: true
+            hostMetrics:
+              enabled: false
+            kubeletMetrics:
+              enabled: false
+            clusterMetrics:
+              enabled: false
+            prometheus:
+              enabled: false
           EOF
