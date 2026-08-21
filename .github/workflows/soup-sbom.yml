@@ -101,6 +101,15 @@ jobs:
           fi
           echo "$CACHE/bin" >> "$GITHUB_PATH"
 
+      # Unconditional: the pipeline discovers modules at run time, so this workflow cannot know
+      # beforehand whether a JVM module is in scope. Without it ./mvnw exits immediately with
+      # "JAVA_HOME is not defined correctly" and every Maven module is recorded as a gap.
+      - name: Ensure a JDK for Maven modules
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
       - name: Discover, scan, assess, publish
         id: discovery
         uses: QuickBirdEng/actions/soup-discovery@main
