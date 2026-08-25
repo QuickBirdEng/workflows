@@ -50,6 +50,18 @@ on:
         required: false
         type: string
         default: '["self-hosted", "Linux"]'
+      mobile-artifact:
+        description: >-
+          Optional, for products with a mobile build the pipeline cannot produce itself (a signed
+          APK/AAB). Format "<candidate-id>:<release-asset-glob>", e.g.
+          "app-android:${{ github.ref_name }}-android*.tar.gz". Before the scan, downloads the
+          first release asset matching the glob for this run's version, extracts it, and exports
+          SBOM_ARTIFACT_<candidate-id> so soup-discovery scans it instead of recording a gap. No
+          match (asset not published yet, or this tag's commit didn't touch the mobile app) is not
+          a failure — the candidate is recorded as a named gap, same as if this input were unset.
+        required: false
+        type: string
+        default: ''
     secrets:
       REGISTRY_USERNAME:
         required: false
@@ -109,6 +121,37 @@ jobs:
         with:
           java-version: '17'
           distribution: temurin
+
+      # mobile-artifact exists so a product with a mobile build does not need its own copy of
+      # this workflow's steps just to hand the built APK/AAB to soup-discovery. Split by the
+      # first ":" rather than taking a structured input: workflow_call inputs are strings only,
+      # and a single string is easier for a caller to get right than a second input whose value
+      # is meaningless without this one.
+      - name: Fetch mobile build artifact, if published for this run's version
+        if: inputs.mobile-artifact != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_API_TOKEN || github.token }}
+          SPEC: ${{ inputs.mobile-artifact }}
+          TAG: ${{ inputs.version }}
+        run: |
+          CANDIDATE_ID="${SPEC%%:*}"
+          PATTERN="${SPEC#*:}"
+          mkdir -p mobile-artifact
+          if gh release download "$TAG" --repo "${{ github.repository }}" \
+               --pattern "$PATTERN" --dir mobile-artifact 2>/dev/null; then
+            tar -xzf mobile-artifact/*.tar.gz -C mobile-artifact 2>/dev/null || true
+            FOUND=$(find mobile-artifact -type f \( -name '*.apk' -o -name '*.aab' \) | head -1)
+            if [ -n "$FOUND" ]; then
+              VAR="SBOM_ARTIFACT_${CANDIDATE_ID//[^A-Za-z0-9]/_}"
+              echo "$VAR=$FOUND" >> "$GITHUB_ENV"
+              echo "using $FOUND for $CANDIDATE_ID"
+            else
+              echo "::warning::mobile-artifact matched a release asset but found no .apk/.aab inside it — check the archive layout"
+            fi
+          else
+            echo "::notice::no release asset matching '$PATTERN' for $TAG — $CANDIDATE_ID recorded as a named gap"
+          fi
 
       - name: Discover, scan, assess, publish
         id: discovery
