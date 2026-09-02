@@ -45,6 +45,14 @@ on:
         required: false
         type: boolean
         default: true
+      wait-for-workflows:
+        description: >-
+          Comma-separated release workflow names to wait for, matched on the `name:` inside those
+          files. workflow_run fires when one of them finishes, so without this the scan can start
+          while another is still pushing what it is meant to scan.
+        required: false
+        type: string
+        default: ''
       runs-on:
         description: 'Runner label(s). JSON array or a single label.'
         required: false
@@ -110,6 +118,24 @@ jobs:
           java-version: '17'
           distribution: temurin
 
+      # A build describes its own closure better than a scan of its output can: syft reads no
+      # components out of an AAB. Anything attached to the release as soup-bom-<candidate>.cdx.json
+      # is handed to that candidate — the filename carries the id, so no per-product input.
+      - name: Collect BOMs supplied with the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_API_TOKEN || github.token }}
+        run: |
+          DIR="$RUNNER_TEMP/supplied-boms"; mkdir -p "$DIR"
+          gh release download "${{ inputs.version }}" -R "${{ github.repository }}" \
+            -p 'soup-bom-*.cdx.json' -D "$DIR" 2>/dev/null || true
+          shopt -s nullglob
+          for f in "$DIR"/soup-bom-*.cdx.json; do
+            id=$(basename "$f" .cdx.json); id="${id#soup-bom-}"
+            echo "SBOM_ARTIFACT_${id//[^A-Za-z0-9]/_}=$f" >> "$GITHUB_ENV"
+            echo "supplied BOM for $id"
+          done
+
       - name: Discover, scan, assess, publish
         id: discovery
         uses: QuickBirdEng/actions/soup-discovery@main
@@ -123,6 +149,7 @@ jobs:
           # which is what makes this pass-through correct.
           release-tag: ${{ inputs.version }}
           scope-file: ${{ inputs.scope-file }}
+          wait-for-workflows: ${{ inputs.wait-for-workflows }}
           render-pdf: ${{ inputs.render-pdf }}
           publish-to-release: ${{ inputs.publish-to-release }}
           registry-username: ${{ secrets.REGISTRY_USERNAME }}

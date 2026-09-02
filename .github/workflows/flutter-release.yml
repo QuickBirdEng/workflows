@@ -189,6 +189,24 @@ jobs:
           qbs-maven-password: ${{ secrets.QBS_DEV_MAVEN_PASSWORD }}
           upload-key: ${{ secrets.UPLOAD_KEY }}
           obfuscate: ${{ inputs.obfuscate }}
+      # syft reads no components out of an AAB, so a product that wants its android closure in the
+      # inventory describes it here, where the build is already resolved. Only for products that
+      # declare the plugin; the SBOM run picks the file up by this name.
+      - name: Android BOM for the inventory
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}/android
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+        run: |
+          grep -q 'org.cyclonedx.bom' settings.gradle 2>/dev/null || exit 0
+          ./gradlew cyclonedxBom --quiet || { echo "::warning::cyclonedxBom failed"; exit 0; }
+          BOM=$(find .. -path '*reports/cyclonedx/bom.json' | head -1)
+          [ -n "$BOM" ] || { echo "::warning::cyclonedxBom produced no bom.json"; exit 0; }
+          cp "$BOM" "$RUNNER_TEMP/soup-bom-app-android.cdx.json"
+          gh release upload "${{ github.ref_name }}" \
+            "$RUNNER_TEMP/soup-bom-app-android.cdx.json" --clobber
+        continue-on-error: true
+
       - uses: QuickBirdEng/actions/upload-debug-symbols-to-sentry@main
         env:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
