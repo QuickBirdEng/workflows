@@ -86,7 +86,7 @@ jobs:
       complete: ${{ steps.discovery.outputs.complete }}
       gaps: ${{ steps.discovery.outputs.gaps }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref || github.ref }}
 
@@ -113,7 +113,7 @@ jobs:
       # beforehand whether a JVM module is in scope. Without it ./mvnw exits immediately with
       # "JAVA_HOME is not defined correctly" and every Maven module is recorded as a gap.
       - name: Ensure a JDK for Maven modules
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: temurin
