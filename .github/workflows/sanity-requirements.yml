@@ -16,9 +16,13 @@ on:
         type: boolean
         default: false
       base-branches:
-        description: "Comma- or newline-separated candidate base branches. The closest merge-base wins."
+        description: "Comma- or newline-separated candidate base branches. The closest merge-base wins. Ignored when base-ref resolves to a non-empty value."
         type: string
         default: "main"
+      base-ref:
+        description: "Explicit base ref. On pull_request events this defaults to github.event.pull_request.base.ref. Leave empty on push-triggered callers; then the closest base-branches candidate is used. Needed for stacked PRs, where the true base is not one of base-branches."
+        type: string
+        default: ""
       loc-limit:
         description: "Maximum inserted plus deleted lines allowed for the branch diff."
         type: number
@@ -28,7 +32,7 @@ on:
         type: string
         default: ""
       branch-name:
-        description: "Branch name to validate. Defaults to github.ref_name when empty."
+        description: "Branch name to validate. Defaults to github.head_ref (PR-triggered runs) or github.ref_name when empty."
         type: string
         default: ""
       ticket-prefixes:
@@ -61,7 +65,7 @@ on:
         default: "*.dill,*.bin,*.xml"
 
 concurrency:
-  group: sanity-checks-${{ github.repository }}-${{ github.ref_name }}
+  group: sanity-checks-${{ github.repository }}-${{ github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -75,20 +79,21 @@ jobs:
 
       - uses: QuickBirdEng/actions/check-loc@main
         with:
+          base-ref: ${{ inputs.base-ref || github.event.pull_request.base.ref }}
           base-branches: ${{ inputs.base-branches }}
-          end-ref: ${{ github.sha }}
+          end-ref: ${{ github.event.pull_request.head.sha || github.sha }}
           loc-limit: ${{ inputs.loc-limit }}
           ignore-patterns: ${{ inputs.loc-ignore-patterns }}
 
   assert-branch-ticket-todos:
-    if: ${{ !inputs.skip-dependabot || (github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot')) }}
+    if: ${{ !inputs.skip-dependabot || (github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name, 'dependabot')) }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: QuickBirdEng/actions/assert-branch-ticket-todos@main
         with:
-          branch-name: ${{ inputs.branch-name || github.ref_name }}
+          branch-name: ${{ inputs.branch-name || github.head_ref || github.ref_name }}
           ticket-prefixes: ${{ inputs.ticket-prefixes }}
           ticket-regex: ${{ inputs.ticket-regex }}
           fail-on-missing-ticket: ${{ inputs.fail-on-missing-ticket }}
