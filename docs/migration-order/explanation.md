@@ -26,14 +26,9 @@ standalone after a normal checkout and base-branch fetch.
 ## Common Inputs
 
 - `runs-on`: defaults to `default-k8s-runner`
-- `migrations-dir`: defaults to `prisma/migrations`; set this to wherever the repo actually
-  keeps its migrations, e.g. `web/prisma/migrations`
+- `migrations-dir`: required, no default; set it to wherever the repo actually keeps its
+  migrations, e.g. `prisma/migrations` or `web/prisma/migrations` for a nested web app.
+  Also set the caller's own `paths` filter to match, so the check only runs when migrations
+  actually change.
 - `base-ref`: optional override; normally left empty so it is picked up from
   `github.event.pull_request.base.ref`
-
-## Typical Overrides
-
-- Swiss Cannabis style setup:
-  `migrations-dir: "web/prisma/migrations"`
-  trigger on `branches: [main, zuerich]` with `paths: ["web/prisma/migrations/**"]`
-  caller job id: `PrismaJS`

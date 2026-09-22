@@ -8,13 +8,9 @@ on:
         type: string
         default: "default-k8s-runner"
       migrations-dir:
-        description: "Path (relative to the repo root) to the migrations directory."
+        description: "Path (relative to the repo root) to the migrations directory. Every caller must set this explicitly."
         type: string
-        default: "prisma/migrations"
-      timestamp-regex:
-        description: "Regex matching the sortable timestamp prefix of a migration folder name."
-        type: string
-        default: "^[0-9]{14}"
+        required: true
       base-ref:
         description: "Explicit base branch name. Defaults to github.event.pull_request.base.ref. Needed for stacked PRs, or for workflow_dispatch/push callers."
         type: string
@@ -41,4 +37,3 @@ jobs:
           migrations-dir: ${{ inputs.migrations-dir }}
           base-ref: origin/${{ inputs.base-ref || github.event.pull_request.base.ref }}
           end-ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          timestamp-regex: ${{ inputs.timestamp-regex }}
