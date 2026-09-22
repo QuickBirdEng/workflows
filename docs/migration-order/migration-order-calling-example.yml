@@ -1,0 +1,14 @@
+name: JS Sanity Requirements
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "prisma/migrations/**"
+
+jobs:
+  PrismaJS:
+    uses: QuickBirdEng/workflows/.github/workflows/migration-order.yml@main
+    with:
+      migrations-dir: "prisma/migrations"

@@ -1,0 +1,35 @@
+name: JS Sanity Requirements
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: "Runner label for the check."
+        type: string
+        default: "default-k8s-runner"
+      migrations-dir:
+        description: "Path (relative to the repo root) to the migrations directory. Every caller must set this explicitly."
+        type: string
+        required: true
+      base-ref:
+        description: "Explicit base branch name. Defaults to github.event.pull_request.base.ref. Needed for stacked PRs, or for workflow_dispatch/push callers."
+        type: string
+        default: ""
+
+concurrency:
+  group: migration-order-${{ github.repository }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  migration-order-check:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: QuickBirdEng/actions/check-migration-order@main
+        with:
+          migrations-dir: ${{ inputs.migrations-dir }}
+          base-ref: ${{ inputs.base-ref || github.event.pull_request.base.ref }}
+          end-ref: ${{ github.event.pull_request.head.sha || github.sha }}

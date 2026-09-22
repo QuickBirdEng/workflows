@@ -1,0 +1,34 @@
+# JS Sanity Requirements
+---
+
+## Why this check exists
+
+Prisma applies pending migrations in filename-sorted order, and that order is set by the
+timestamp prefix in the migration folder name. A new migration folder timestamped earlier
+than what is already on the target branch still gets applied, since Prisma only tracks
+what ran before, not whether the name sorts after everything else. It just runs before
+migrations that were already written, and possibly deployed, assuming it did not exist yet.
+Harmless for an isolated migration, a real ordering bug if a later migration ever touches
+something the backdated one also touches.
+
+## How it works
+
+The `migration-order-check` job fails a PR that adds a migration folder not timestamped
+after the latest migration already on the PR's target branch. It resolves the base and
+head from `github.event.pull_request.base.ref` and `github.event.pull_request.head.sha`,
+the same stacked-PR-safe resolution used by
+[sanity-requirements](../sanity-requirements/explanation.md), so trigger the caller on
+`pull_request`.
+
+The actual comparison lives in the `check-migration-order` action, which fetches `base-ref`
+from origin itself, so it can also be used standalone after a normal checkout.
+
+## Common Inputs
+
+- `runs-on`: defaults to `default-k8s-runner`
+- `migrations-dir`: required, no default; set it to wherever the repo actually keeps its
+  migrations, e.g. `prisma/migrations` or `web/prisma/migrations` for a nested web app.
+  Also set the caller's own `paths` filter to match, so the check only runs when migrations
+  actually change.
+- `base-ref`: optional override; normally left empty so it is picked up from
+  `github.event.pull_request.base.ref`
