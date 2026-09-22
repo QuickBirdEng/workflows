@@ -28,12 +28,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch base branch
-        shell: bash
-        run: git fetch origin "${{ inputs.base-ref || github.event.pull_request.base.ref }}"
-
       - uses: QuickBirdEng/actions/check-migration-order@main
         with:
           migrations-dir: ${{ inputs.migrations-dir }}
-          base-ref: origin/${{ inputs.base-ref || github.event.pull_request.base.ref }}
+          base-ref: ${{ inputs.base-ref || github.event.pull_request.base.ref }}
           end-ref: ${{ github.event.pull_request.head.sha || github.sha }}

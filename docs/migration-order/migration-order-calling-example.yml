@@ -12,4 +12,3 @@ jobs:
     uses: QuickBirdEng/workflows/.github/workflows/migration-order.yml@main
     with:
       migrations-dir: "prisma/migrations"
-    secrets: inherit

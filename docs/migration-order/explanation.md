@@ -20,8 +20,8 @@ the same stacked-PR-safe resolution used by
 [sanity-requirements](../sanity-requirements/explanation.md), so trigger the caller on
 `pull_request`.
 
-The actual comparison lives in the `check-migration-order` action, so it can also be used
-standalone after a normal checkout and base-branch fetch.
+The actual comparison lives in the `check-migration-order` action, which fetches `base-ref`
+from origin itself, so it can also be used standalone after a normal checkout.
 
 ## Common Inputs
 
