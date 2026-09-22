@@ -9,6 +9,6 @@ on:
 
 jobs:
   PrismaJS:
-    uses: QuickBirdEng/workflows/.github/workflows/migration-order.yml@main
+    uses: QuickBirdEng/workflows/.github/workflows/js-sanity-requirements.yml@main
     with:
       migrations-dir: "prisma/migrations"
