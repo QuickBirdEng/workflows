@@ -1,0 +1,16 @@
+name: Migration Order
+
+on:
+  pull_request:
+    branches:
+      - main
+      - zuerich
+    paths:
+      - "web/prisma/migrations/**"
+
+jobs:
+  check-migration-order:
+    uses: QuickBirdEng/workflows/.github/workflows/migration-order.yml@main
+    with:
+      migrations-dir: "web/prisma/migrations"
+    secrets: inherit

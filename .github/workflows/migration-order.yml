@@ -1,0 +1,44 @@
+name: Migration Order
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: "Runner label for the check."
+        type: string
+        default: "default-k8s-runner"
+      migrations-dir:
+        description: "Path (relative to the repo root) to the migrations directory."
+        type: string
+        default: "prisma/migrations"
+      timestamp-regex:
+        description: "Regex matching the sortable timestamp prefix of a migration folder name."
+        type: string
+        default: "^[0-9]{14}"
+      base-ref:
+        description: "Explicit base branch name. Defaults to github.event.pull_request.base.ref. Needed for stacked PRs, or for workflow_dispatch/push callers."
+        type: string
+        default: ""
+
+concurrency:
+  group: migration-order-${{ github.repository }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  check-migration-order:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        shell: bash
+        run: git fetch origin "${{ inputs.base-ref || github.event.pull_request.base.ref }}"
+
+      - uses: QuickBirdEng/actions/check-migration-order@main
+        with:
+          migrations-dir: ${{ inputs.migrations-dir }}
+          base-ref: origin/${{ inputs.base-ref || github.event.pull_request.base.ref }}
+          end-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          timestamp-regex: ${{ inputs.timestamp-regex }}
