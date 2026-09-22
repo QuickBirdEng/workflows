@@ -1,5 +1,7 @@
-# Migration Order
+# JS Sanity Requirements
 ---
+
+## Why this check exists
 
 Prisma applies pending migrations in filename-sorted order, and that order is set by the
 timestamp prefix in the migration folder name. A new migration folder timestamped earlier
@@ -9,10 +11,14 @@ migrations that were already written, and possibly deployed, assuming it did not
 Harmless for an isolated migration, a real ordering bug if a later migration ever touches
 something the backdated one also touches.
 
-This workflow fails a PR that adds a migration folder not timestamped after the latest
-migration already on the PR's target branch. The comparison uses `github.event.pull_request.base.ref`
-and `github.event.pull_request.head.sha`, the same stacked-PR-safe resolution used by
-[sanity-requirements](../sanity-requirements/explanation.md), so trigger the caller on `pull_request`.
+## How it works
+
+The `migration-order-check` job fails a PR that adds a migration folder not timestamped
+after the latest migration already on the PR's target branch. It resolves the base and
+head from `github.event.pull_request.base.ref` and `github.event.pull_request.head.sha`,
+the same stacked-PR-safe resolution used by
+[sanity-requirements](../sanity-requirements/explanation.md), so trigger the caller on
+`pull_request`.
 
 The actual comparison lives in the `check-migration-order` action, so it can also be used
 standalone after a normal checkout and base-branch fetch.
@@ -30,3 +36,4 @@ standalone after a normal checkout and base-branch fetch.
 - Swiss Cannabis style setup:
   `migrations-dir: "web/prisma/migrations"`
   trigger on `branches: [main, zuerich]` with `paths: ["web/prisma/migrations/**"]`
+  caller job id: `PrismaJS`

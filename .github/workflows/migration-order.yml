@@ -1,4 +1,4 @@
-name: Migration Order
+name: JS Sanity Requirements
 
 on:
   workflow_call:
@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-migration-order:
+  migration-order-check:
     runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v4

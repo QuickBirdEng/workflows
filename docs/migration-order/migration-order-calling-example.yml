@@ -1,4 +1,4 @@
-name: Migration Order
+name: JS Sanity Requirements
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
       - "web/prisma/migrations/**"
 
 jobs:
-  check-migration-order:
+  PrismaJS:
     uses: QuickBirdEng/workflows/.github/workflows/migration-order.yml@main
     with:
       migrations-dir: "web/prisma/migrations"
