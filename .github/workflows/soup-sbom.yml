@@ -53,6 +53,14 @@ on:
         required: false
         type: string
         default: ''
+      slack-channel-id:
+        description: >-
+          Announce the new assessment here: the headline numbers, what moved since the previous
+          release, and the VDR itself. Omitted, the documents are still produced and attached;
+          only the message is skipped.
+        required: false
+        type: string
+        default: ''
       runs-on:
         description: 'Runner label(s). JSON array or a single label.'
         required: false
@@ -70,6 +78,10 @@ on:
       DO_ACCESS_KEY:
         required: false
       DO_SECRET_KEY:
+        required: false
+      # Needs the files:write scope to attach the VDR. Without it the message still goes out,
+      # with a link to the release instead of the document.
+      SLACK_BOT_TOKEN:
         required: false
     outputs:
       complete:
@@ -157,6 +169,8 @@ jobs:
           repo-token: ${{ secrets.GH_API_TOKEN || github.token }}
           do-access-key: ${{ secrets.DO_ACCESS_KEY }}
           do-secret-key: ${{ secrets.DO_SECRET_KEY }}
+          slack-channel-id: ${{ inputs.slack-channel-id }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       # An incomplete inventory is a finding, not a failure: the document states which artefacts
       # are missing and why, and that is the record WI §7 stage #3 asks for. Failing the job here
