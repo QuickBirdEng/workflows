@@ -83,6 +83,8 @@ on:
       # with a link to the release instead of the document.
       SLACK_BOT_TOKEN:
         required: false
+      SOUP_SLACK_BOT_TOKEN:
+        required: false
     outputs:
       complete:
         description: 'false if any in-scope candidate could not be scanned'
@@ -170,7 +172,8 @@ jobs:
           do-access-key: ${{ secrets.DO_ACCESS_KEY }}
           do-secret-key: ${{ secrets.DO_SECRET_KEY }}
           slack-channel-id: ${{ inputs.slack-channel-id }}
-          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          # The SOUP app if it exists, the shared CI bot otherwise.
+          slack-bot-token: ${{ secrets.SOUP_SLACK_BOT_TOKEN || secrets.SLACK_BOT_TOKEN }}
 
       # An incomplete inventory is a finding, not a failure: the document states which artefacts
       # are missing and why, and that is the record WI §7 stage #3 asks for. Failing the job here
