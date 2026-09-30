@@ -63,6 +63,23 @@ jobs:
             done
           done
           echo "fetched $(ls -1 evidence | wc -l) run record(s)"
+          echo "YEARS=$YEARS" >> "$GITHUB_ENV"
+
+      # Without the earlier reports the reconciliation cannot check its own cadence, which is
+      # one of the five questions it exists to answer. It then always reported "first run".
+      - name: Fetch the earlier reconciliation reports
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SECRET_KEY }}
+        run: |
+          mkdir -p previous
+          for year in $YEARS; do
+            aws s3 sync \
+              "s3://quickbird-soup-artifacts/${{ github.event.repository.name }}/soup-backstop/$year/" "previous/" \
+              --endpoint-url https://fra1.digitaloceanspaces.com \
+              --only-show-errors || true
+          done
+          echo "fetched $(ls -1 previous | wc -l) earlier report(s)"
 
       - name: Resolve the report path
         id: path
@@ -70,11 +87,15 @@ jobs:
 
       - name: Reconcile
         id: backstop
-        run: |
-          python3 .github/soup/backstop-report.py evidence \
-            --products '${{ inputs.products }}' \
-            --window '${{ inputs.window }}' \
-            --out backstop-report.json
+        uses: QuickBirdEng/actions/soup-backstop@main
+        with:
+          evidence: evidence
+          products: ${{ inputs.products }}
+          window: ${{ inputs.window }}
+          previous: previous
+          out: backstop-report.json
+        # The report is stored even on an action-required verdict: it is the record of the
+        # review, and the step below is what turns the verdict into a failing job.
         continue-on-error: true
 
       # The report is the record of the review, so it is stored like any other.
@@ -91,6 +112,10 @@ jobs:
 
       - name: Fail on an action-required verdict
         run: |
+          if [ ! -s backstop-report.json ]; then
+            echo "::error::the reconciliation produced no report — see the Reconcile step"
+            exit 1
+          fi
           VERDICT=$(jq -r '.verdict' backstop-report.json)
           jq -r '"backstop: " + (.summary | tostring)' backstop-report.json
           if [ "$VERDICT" != "clean" ]; then
