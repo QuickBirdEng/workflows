@@ -115,9 +115,11 @@ jobs:
         run: |
           SUCCESS_FILES=()
           FAILED_FILES=()
-          STATUS=1
 
           for FILE in $SOUP_FILES; do
+            # Per record. Initialised once outside the loop, the first record that passed
+            # left STATUS at 0 and every later record in the same run inherited the pass.
+            STATUS=1
             CONDITION=$(jq -r '.metadata.approval.condition // empty' "$FILE")
             VERSION=$(jq -r '.metadata.input_version // empty' "$FILE")
 
