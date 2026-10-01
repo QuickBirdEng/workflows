@@ -110,6 +110,8 @@ jobs:
           case "${{ steps.monitor.outputs.verdict }}" in
             all-clear)
               echo "all clear — record retained as evidence that the product was monitored today" ;;
+            nothing-to-observe)
+              echo "nothing in production to observe yet — record retained; see the weekly overview for what is missing" ;;
             kev-findings)
               echo "::error::actively exploited vulnerability present in the running version"; exit 1 ;;
             incomplete)
